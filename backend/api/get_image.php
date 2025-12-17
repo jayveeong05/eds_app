@@ -11,7 +11,18 @@
 
 header("Access-Control-Allow-Origin: *");
 
-require_once __DIR__ . '/../config/s3_config.php';
+// Load S3 config from file if exists (local dev), otherwise use env vars (Railway)
+$s3ConfigFile = __DIR__ . '/../config/s3_config.php';
+if (file_exists($s3ConfigFile)) {
+    require_once $s3ConfigFile;
+} else {
+    // Use environment variables (for Railway/production)
+    define('AWS_ACCESS_KEY', getenv('AWS_ACCESS_KEY'));
+    define('AWS_SECRET_KEY', getenv('AWS_SECRET_KEY'));
+    define('AWS_REGION', getenv('AWS_REGION') ?: 'us-east-1');
+    define('AWS_BUCKET', getenv('AWS_BUCKET'));
+}
+
 require_once __DIR__ . '/../lib/SimpleS3.php';
 
 // Get the S3 path from query parameter
