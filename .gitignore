@@ -46,7 +46,9 @@ app.*.map.json
 
 # Backend configuration (AWS credentials, database passwords)
 backend/config/s3_config.php
-backend/config/database.php
+# Backend configuration (AWS credentials, database passwords)
+backend/config/s3_config.php
+# backend/config/database.php <- Commented out to allow pushing secure env-var version
 
 # Firebase configuration
 google-services.json
