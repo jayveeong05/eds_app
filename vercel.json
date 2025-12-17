@@ -6,6 +6,9 @@
     "backend/api/admin/*.php": {
       "runtime": "vercel-php@0.6.0"
     },
+    "backend/admin/*.php": {
+      "runtime": "vercel-php@0.6.0"
+    },
     "backend/index.php": {
       "runtime": "vercel-php@0.6.0"
     }

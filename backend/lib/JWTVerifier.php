@@ -3,7 +3,11 @@
 
 class JWTVerifier {
     private $googleKeysUrl = 'https://www.googleapis.com/robot/v1/metadata/x509/securetoken@system.gserviceaccount.com';
-    private $cacheFile = __DIR__ . '/google_keys.json';
+    private $cacheFile;
+
+    public function __construct() {
+        $this->cacheFile = sys_get_temp_dir() . '/google_keys.json';
+    }
 
     public function verify($idToken, $projectId) {
         $parts = explode('.', $idToken);
