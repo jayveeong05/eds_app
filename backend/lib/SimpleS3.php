@@ -232,5 +232,54 @@ class SimpleS3 {
         
         return $http_code;
     }
+
+    /**
+     * Generate a presigned URL for secure temporary access to S3 object
+     * @param string $bucket - S3 bucket name
+     * @param string $key - S3 object key (e.g., "promotions/abc123.jpg")
+     * @param int $expiresIn - URL expiry time in seconds (default: 1 hour)
+     * @return string - Presigned URL
+     */
+    public function getPresignedUrl($bucket, $key, $expiresIn = 3600) {
+        $host = "$bucket.s3.$this->region.amazonaws.com";
+        $service = 's3';
+        $algorithm = 'AWS4-HMAC-SHA256';
+        $amz_date = gmdate('Ymd\THis\Z');
+        $date_stamp = gmdate('Ymd');
+        
+        // Canonical Request
+        $canonical_uri = '/' . $key;
+        $canonical_querystring = http_build_query([
+            'X-Amz-Algorithm' => $algorithm,
+            'X-Amz-Credential' => $this->accessKey . '/' . $date_stamp . '/' . $this->region . '/' . $service . '/aws4_request',
+            'X-Amz-Date' => $amz_date,
+            'X-Amz-Expires' => $expiresIn,
+            'X-Amz-SignedHeaders' => 'host'
+        ]);
+        
+        $canonical_headers = "host:$host\n";
+        $signed_headers = 'host';
+        $payload_hash = 'UNSIGNED-PAYLOAD';
+        
+        $canonical_request = "GET\n$canonical_uri\n$canonical_querystring\n$canonical_headers\n$signed_headers\n$payload_hash";
+        
+        // String to Sign
+        $credential_scope = "$date_stamp/$this->region/$service/aws4_request";
+        $string_to_sign = "$algorithm\n$amz_date\n$credential_scope\n" . hash('sha256', $canonical_request);
+        
+        // Signing Key
+        $kDate = hash_hmac('sha256', $date_stamp, 'AWS4' . $this->secretKey, true);
+        $kRegion = hash_hmac('sha256', $this->region, $kDate, true);
+        $kService = hash_hmac('sha256', $service, $kRegion, true);
+        $kSigning = hash_hmac('sha256', 'aws4_request', $kService, true);
+        
+        // Signature
+        $signature = hash_hmac('sha256', $string_to_sign, $kSigning);
+        
+        // Build presigned URL
+        $presigned_url = "https://$host$canonical_uri?$canonical_querystring&X-Amz-Signature=$signature";
+        
+        return $presigned_url;
+    }
 }
 ?>

@@ -142,10 +142,8 @@ function displayPromotions(promotions) {
     }
     
     grid.innerHTML = promotions.map(promo => {
-        // Ensure image_url uses proxy pattern
-        const imageUrl = promo.image_url.includes('get_image.php') 
-            ? promo.image_url 
-            : `/api/get_image.php?path=${promo.image_url}`;
+        // API now returns presigned URLs directly
+        const imageUrl = promo.image_url;
             
         return `
         <div class="col-md-4">
@@ -242,9 +240,8 @@ function openEditModal(promoId) {
     
     // Show current image preview using proxy URL
     // Check if image_url is already a proxy URL or an S3 key
-    const imageUrl = promo.image_url.includes('get_image.php') 
-        ? promo.image_url 
-        : `/api/get_image.php?path=${promo.image_url}`;
+    // API now returns presigned URLs directly
+    const imageUrl = promo.image_url;
     
     const preview = document.getElementById('editImagePreview');
     preview.classList.remove('d-none');

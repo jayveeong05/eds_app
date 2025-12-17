@@ -49,13 +49,27 @@ try {
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
     
+    
+    //Initialize S3 for presigned URLs
+    require_once __DIR__ . '/../../lib/SimpleS3.php';
+    $s3ConfigFile = __DIR__ . '/../../config/s3_config.php';
+    if (file_exists($s3ConfigFile)) {
+        require_once $s3ConfigFile;
+    } else {
+        define('AWS_ACCESS_KEY', getenv('AWS_ACCESS_KEY'));
+        define('AWS_SECRET_KEY', getenv('AWS_SECRET_KEY'));
+        define('AWS_REGION', getenv('AWS_REGION') ?: 'us-east-1');
+        define('AWS_BUCKET', getenv('AWS_BUCKET'));
+    }
+    $s3 = new SimpleS3(AWS_ACCESS_KEY, AWS_SECRET_KEY, AWS_REGION);
+    
     $promotions = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        // Convert S3 key to proxy URL if needed (for admin web panel use localhost)
+        // Generate presigned URL for S3 image (valid for 1 hour)
         $imageUrl = $row['image_url'];
         if (strpos($imageUrl, 'http') !== 0) {
-            // It's an S3 key, convert to proxy URL
-            $imageUrl = 'http://localhost:8000/api/get_image.php?path=' . $imageUrl;
+            // It's an S3 key, generate presigned URL
+            $imageUrl = $s3->getPresignedUrl(AWS_BUCKET, $imageUrl, 3600);
         }
         
         $promotions[] = [
