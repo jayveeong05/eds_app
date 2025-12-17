@@ -137,7 +137,7 @@ if (isset($_GET['timeout'])) {
                 
                 // Verify admin access with backend
                 loadingSpinner.classList.add('show');
-                const response = await fetch('../api/admin/test_auth.php', {
+                const response = await fetch('/api/admin/test_auth.php', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ idToken })
@@ -152,7 +152,7 @@ if (isset($_GET['timeout'])) {
                     sessionStorage.setItem('adminEmail', data.admin.email);
                     
                     // Create PHP session
-                    const sessionResponse = await fetch('login_handler.php', {
+                    const sessionResponse = await fetch('/admin/login_handler.php', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
