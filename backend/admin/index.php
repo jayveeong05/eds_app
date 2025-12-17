@@ -3,7 +3,7 @@ session_start();
 
 // If already logged in, redirect to dashboard
 if (isset($_SESSION['admin_logged_in']) && $_SESSION['admin_logged_in'] === true) {
-    header('Location: dashboard.php');
+    header('Location: /admin/dashboard.php');
     exit;
 }
 
@@ -163,7 +163,7 @@ if (isset($_GET['timeout'])) {
                     });
                     
                     if (sessionResponse.ok) {
-                        window.location.href = 'dashboard.php';
+                        window.location.href = '/admin/dashboard.php';
                     } else {
                         throw new Error('Session creation failed');
                     }
