@@ -34,9 +34,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
       final userData = result['data']['user'];
       final status = userData['status'];
-      final role = userData['role'];
-      // Routing Logic
-      if (status == 'active') {
+      final isNewUser = result['data']['is_new_user'] == true;
+
+      // Check if this is a new third-party user (Google/Apple)
+      if (isNewUser) {
+        // Navigate to Complete Profile for name confirmation
+        Navigator.pushNamed(
+          context,
+          '/complete-profile',
+          arguments: {
+            'signInMethod': userData['login_method'] ?? 'google',
+            'email': userData['email'],
+            'name': userData['name'] ?? '', // May be from Google/Apple
+          },
+        );
+      } else if (status == 'active') {
         Navigator.pushReplacementNamed(context, '/dashboard');
       } else {
         Navigator.pushReplacementNamed(context, '/inactive');
@@ -48,13 +60,51 @@ class _LoginScreenState extends State<LoginScreen> {
             'user-not-found',
           )) {
         // Show dialog offering registration
-        // _showRegisterPrompt();
+        _showCreateAccountDialog();
       } else {
         setState(() {
           _errorMessage = result['message'] ?? 'Authentication failed';
         });
       }
     }
+  }
+
+  void _showCreateAccountDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Account Not Found'),
+        content: const Text(
+          'No account exists with this email. Would you like to create one?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Navigate to Complete Profile with pre-filled email/password
+              Navigator.pushNamed(
+                context,
+                '/complete-profile',
+                arguments: {
+                  'signInMethod': 'email',
+                  'email': _emailController.text.trim(),
+                  'password': _passwordController.text.trim(),
+                },
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3F51B5),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Create Account'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -264,23 +314,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ),
                                     ),
                                     onPressed: () {
-                                      if (_emailController.text
-                                              .trim()
-                                              .isEmpty ||
-                                          _passwordController.text
-                                              .trim()
-                                              .isEmpty) {
-                                        setState(() {
-                                          _errorMessage =
-                                              'Email and Password are required';
-                                        });
-                                        return;
-                                      }
-                                      _handleAuthAction(
-                                        () => _authService.registerWithEmail(
-                                          _emailController.text.trim(),
-                                          _passwordController.text.trim(),
-                                        ),
+                                      // Navigate to Complete Profile screen (empty form)
+                                      Navigator.pushNamed(
+                                        context,
+                                        '/complete-profile',
+                                        arguments: {'signInMethod': 'email'},
                                       );
                                     },
                                   ),

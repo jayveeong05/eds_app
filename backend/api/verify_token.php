@@ -57,7 +57,8 @@ if (!empty($data->idToken)) {
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             echo json_encode(array(
                 "message" => "User verified.",
-                "user" => $row
+                "user" => $row,
+                "is_new_user" => false
             ));
         } else {
             // User new, create
@@ -68,13 +69,18 @@ if (!empty($data->idToken)) {
             $stmt->bindParam(':loginMethod', $loginMethod);
             
             if($stmt->execute()){
-                // Return new user status
+                // Fetch the newly created user to get the id
+                $query = "SELECT id::text as id, email, status, role, login_method FROM users WHERE firebase_uid = :uid LIMIT 1";
+                $stmt = $db->prepare($query);
+                $stmt->bindParam(':uid', $uid);
+                $stmt->execute();
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                
+                // Return new user status with complete data
                 echo json_encode(array(
                     "message" => "User created.",
-                    "user" => array(
-                        "status" => "inactive",
-                        "role" => "user"
-                    )
+                    "user" => $row,
+                    "is_new_user" => true
                 ));
             } else {
                 http_response_code(503);

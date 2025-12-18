@@ -1,6 +1,7 @@
 import 'package:eds_app/screens/inactive_screen.dart';
 import 'package:eds_app/screens/main_navigation.dart';
 import 'package:eds_app/screens/login_screen.dart';
+import 'package:eds_app/screens/complete_profile_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 
@@ -35,6 +36,20 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/dashboard': (context) => const MainNavigation(),
         '/inactive': (context) => const InactiveScreen(),
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name == '/complete-profile') {
+          final args = settings.arguments as Map<String, dynamic>?;
+          return MaterialPageRoute(
+            builder: (context) => CompleteProfileScreen(
+              signInMethod: args?['signInMethod'] ?? 'email',
+              email: args?['email'],
+              password: args?['password'],
+              name: args?['name'],
+            ),
+          );
+        }
+        return null;
       },
     );
   }
