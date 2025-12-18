@@ -1,4 +1,7 @@
 <?php
+// Load environment variables from .env file (for local development)
+require_once __DIR__ . '/load_env.php';
+
 class Database {
     private $host;
     private $db_name;

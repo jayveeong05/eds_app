@@ -97,6 +97,13 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
         backgroundColor: const Color(0xFF3F51B5), // EDS Royal Blue
         foregroundColor: Colors.white,
         centerTitle: false, // Align title to the left
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _fetchPromotions,
+            tooltip: 'Refresh Promotions',
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())

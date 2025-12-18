@@ -54,6 +54,24 @@ try {
         $stmt->execute();
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
+        // Initialize S3 for presigned URLs
+        require_once __DIR__ . '/../lib/SimpleS3.php';
+        $s3ConfigFile = __DIR__ . '/../config/s3_config.php';
+        if (file_exists($s3ConfigFile)) {
+            require_once $s3ConfigFile;
+        } else {
+            define('AWS_ACCESS_KEY', getenv('AWS_ACCESS_KEY'));
+            define('AWS_SECRET_KEY', getenv('AWS_SECRET_KEY'));
+            define('AWS_REGION', getenv('AWS_REGION') ?: 'us-east-1');
+            define('AWS_BUCKET', getenv('AWS_BUCKET'));
+        }
+        $s3 = new SimpleS3(AWS_ACCESS_KEY, AWS_SECRET_KEY, AWS_REGION);
+        
+        // Generate presigned URL for profile image if it exists
+        if (!empty($user['profile_image_url']) && strpos($user['profile_image_url'], 'http') !== 0) {
+            $user['profile_image_url'] = $s3->getPresignedUrl(AWS_BUCKET, $user['profile_image_url'], 3600);
+        }
+
         http_response_code(200);
         echo json_encode([
             'success' => true,

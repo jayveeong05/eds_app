@@ -52,9 +52,9 @@ class UploadService {
           s3Path = s3Url; // It's already the key (e.g. "avatars/abc123.jpg")
         }
 
-        // Return proxy URL instead of direct S3 URL
-        String proxyUrl = '$baseUrl/api/get_image.php?path=$s3Path';
-        return proxyUrl;
+        // Return raw S3 key (e.g. "avatars/abc123.jpg")
+        // The backend will generate a presigned URL when fetching the profile
+        return s3Path;
       } else {
         print('Upload failed: ${response.body}');
         return null;

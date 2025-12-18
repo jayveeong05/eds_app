@@ -37,26 +37,36 @@ if (!empty($data->idToken)) {
     $userId = $admin['id'];
 }
 
-// Insert promotion
-$query = "INSERT INTO promotions (user_id, image_url, description) 
-          VALUES (:user_id, :image_url, :description)";
 
-$stmt = $db->prepare($query);
-$stmt->bindParam(':user_id', $userId);
-$stmt->bindParam(':image_url', $data->image_url);
-$stmt->bindParam(':description', $data->description);
+try {
+    // Insert promotion (with PostgreSQL UUID casting)
+    $query = "INSERT INTO promotions (user_id, image_url, description) 
+              VALUES (:user_id::uuid, :image_url, :description)";
 
-if ($stmt->execute()) {
-    http_response_code(201);
-    echo json_encode([
-        'success' => true,
-        'message' => 'Promotion created successfully'
-    ]);
-} else {
+    $stmt = $db->prepare($query);
+    $stmt->bindParam(':user_id', $userId);
+    $stmt->bindParam(':image_url', $data->image_url);
+    $stmt->bindParam(':description', $data->description);
+
+    if ($stmt->execute()) {
+        http_response_code(201);
+        echo json_encode([
+            'success' => true,
+            'message' => 'Promotion created successfully'
+        ]);
+    } else {
+        $errorInfo = $stmt->errorInfo();
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'message' => 'Failed to create promotion: ' . ($errorInfo[2] ?? 'Unknown error')
+        ]);
+    }
+} catch (PDOException $e) {
     http_response_code(500);
     echo json_encode([
         'success' => false,
-        'message' => 'Failed to create promotion'
+        'message' => 'Database error: ' . $e->getMessage()
     ]);
 }
 ?>
