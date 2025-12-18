@@ -3,7 +3,16 @@ header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 
-include_once __DIR__ . '/../config/s3_config.php';
+// Initialize S3 config (File for local, Env for production)
+$s3ConfigFile = __DIR__ . '/../config/s3_config.php';
+if (file_exists($s3ConfigFile)) {
+    require_once $s3ConfigFile;
+} else {
+    define('AWS_ACCESS_KEY', getenv('AWS_ACCESS_KEY'));
+    define('AWS_SECRET_KEY', getenv('AWS_SECRET_KEY'));
+    define('AWS_REGION', getenv('AWS_REGION') ?: 'us-east-1');
+    define('AWS_BUCKET', getenv('AWS_BUCKET'));
+}
 include_once __DIR__ . '/../lib/SimpleS3.php';
 
 $response = array();
