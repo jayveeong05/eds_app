@@ -30,10 +30,17 @@ if (isset($_FILES['file']) && isset($_POST['folder'])) {
         exit;
     }
     
-    // Generate unique name
-    $ext = pathinfo($file_name, PATHINFO_EXTENSION);
-    $new_name = uniqid() . '.' . $ext;
-    $s3_key = "$folder/$new_name";
+    // For invoices folder, preserve original filename
+    // For other folders, generate unique filename
+    if ($folder === 'invoices') {
+        // Use original filename for invoices (preserves format like AA001001-Jan.pdf)
+        $s3_key = "$folder/$file_name";
+    } else {
+        // Generate unique filename for avatars/promotions
+        $ext = pathinfo($file_name, PATHINFO_EXTENSION);
+        $new_name = uniqid() . '.' . $ext;
+        $s3_key = "$folder/$new_name";
+    }
     
     $s3 = new SimpleS3(AWS_ACCESS_KEY, AWS_SECRET_KEY, AWS_REGION);
     $upload_result = $s3->putObject($file_path, AWS_BUCKET, $s3_key);

@@ -42,8 +42,10 @@ class UploadService {
         var data = json.decode(response.body);
         String s3Url = data['url'];
 
-        // TEMPORARY WORKAROUND: Use backend proxy because bucket doesn't allow public access
-        // TODO: Remove this when bucket policy is updated to allow public read for avatars
+        // Extract S3 key from the upload response
+        // The backend returns the S3 key (e.g., "avatars/abc123.jpg")
+        // which we store in the database. When fetching profiles/promotions,
+        // the backend generates presigned URLs for secure access.
         String s3Path;
         if (s3Url.startsWith('http')) {
           Uri uri = Uri.parse(s3Url);
@@ -52,8 +54,7 @@ class UploadService {
           s3Path = s3Url; // It's already the key (e.g. "avatars/abc123.jpg")
         }
 
-        // Return raw S3 key (e.g. "avatars/abc123.jpg")
-        // The backend will generate a presigned URL when fetching the profile
+        // Return S3 key - backend will generate presigned URLs when needed
         return s3Path;
       } else {
         print('Upload failed: ${response.body}');

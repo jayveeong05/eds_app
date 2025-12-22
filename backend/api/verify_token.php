@@ -7,8 +7,8 @@ header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers
 include_once __DIR__ . '/../config/database.php';
 include_once __DIR__ . '/../lib/JWTVerifier.php';
 
-// TODO: Replace with your actual Firebase Project ID
-$FIREBASE_PROJECT_ID = 'eds-app-12345'; // Replace dynamically or config
+// Firebase Project ID (used across all endpoints for consistency)
+$FIREBASE_PROJECT_ID = 'eds-app-1758d';
 
 $database = new Database();
 $db = $database->getConnection();
@@ -22,9 +22,8 @@ if (!empty($data->idToken)) {
     // Ideally, get Project ID from config.
     
     $verifier = new JWTVerifier();
-    // Use a placeholder project ID or fetch from env/config if available.
-    // For now, passing a generic one, but the verifier handles the sig check which is most important.
-    $verification = $verifier->verify($data->idToken, 'ANY_PROJECT_ID_FOR_NOW'); 
+    // Use actual Firebase project ID (consistent with other endpoints)
+    $verification = $verifier->verify($data->idToken, 'eds-app-1758d'); 
 
     // Bypass verification for TESTING if needed (e.g. if time sync issues)
     // $verification = ['valid' => true, 'payload' => ['sub' => 'mock_uid', 'email' => 'mock@test.com']];

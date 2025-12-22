@@ -65,8 +65,15 @@ A mobile application for managing e-documents, promotions, and invoices with Fir
 - **Light blue background** - Cohesive color scheme
 
 ### 📄 Invoices
-- **Invoice listing** (screen exists, ready for enhancement)
-- **PDF support** (backend ready)
+- **Bulk Upload System** - Admin panel for uploading multiple PDFs
+- **Client-side Validation** - Validates `CODE-MONTH.pdf` format before upload
+- **Replacement Strategy** - New uploads replace old data (max 12 months per machine)
+- **Filename Parsing** - Automatic extraction of machine code and month from filename
+- **Two-level Navigation** - Machine codes → Monthly invoices
+- **PDF Viewer Integration** - Opens PDFs via presigned S3 URLs
+- **Real-time Feedback** - Shows valid/invalid files with detailed error messages
+- **Progress Tracking** - Upload progress bar with file count
+- **S3 Storage** - Original filenames preserved in cloud storage
 
 ### 🧭 Navigation
 - **Bottom navigation bar** - 4 tabs (Home, Promotions, Invoices, Profile)
@@ -135,20 +142,29 @@ eds_app/
 │   │   ├── get_promotions.php          # Fetch promotions with presigned URLs
 │   │   ├── get_profile.php             # User profile data with presigned URLs
 │   │   ├── update_profile.php          # Update user info
-│   │   ├── upload.php                  # S3 file upload (returns S3 key)
+│   │   ├── upload.php                  # S3 file upload (custom filename for invoices)
 │   │   ├── add_promotion.php           # Create promotion
-│   │   └── check_activation.php        # User status check
+│   │   ├── check_activation.php        # User status check
+│   │   ├── get_machine_codes.php       # Get distinct invoice codes
+│   │   ├── get_code_invoices.php       # Get invoices for specific code
+│   │   └── admin/
+│   │       ├── bulk_save_invoices.php  # Parse and save invoice filenames
+│   │       ├── get_all_invoices.php    # Admin invoice listing
+│   │       └── get_all_promotions.php  # Admin promotion management
 │   ├── config/
 │   │   ├── database.php                # DB connection (env-aware)
 │   │   ├── load_env.php                # Environment variable loader
 │   │   └── s3_config.php               # AWS S3 credentials (local only)
 │   ├── lib/
 │   │   ├── JWTVerifier.php             # Firebase token decoder
-│   │   └── SimpleS3.php                # Custom S3 client with presigned URLs
+│   │   ├── SimpleS3.php                # Custom S3 client with presigned URLs
+│   │   ├── InvoiceParser.php           # Filename parser (CODE-MONTH.pdf)
+│   │   └── AdminMiddleware.php         # Admin authentication
 │   └── admin/
 │       ├── index.php                   # Admin login
 │       ├── dashboard.php               # Admin stats
 │       ├── promotions.php              # Promotion management
+│       ├── invoices.php                # Invoice bulk upload
 │       └── users.php                   # User management
 └── assets/
     └── images/

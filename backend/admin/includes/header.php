@@ -46,6 +46,11 @@
                             <i class="bi bi-megaphone"></i> Promotions
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo ($currentPage == 'invoices') ? 'active' : ''; ?>" href="invoices.php">
+                            <i class="bi bi-receipt-cutoff"></i> Invoices
+                        </a>
+                    </li>
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">

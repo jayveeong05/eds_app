@@ -2,11 +2,12 @@
 /**
  * Image Proxy Endpoint
  * 
- * TEMPORARY WORKAROUND: Serves S3 images through backend because bucket policy
- * doesn't allow public access to avatars folder.
+ * Serves S3 images through backend proxy for admin panel image preview during upload.
+ * The admin panel uses this for immediate preview after upload, while the main
+ * promotion display uses presigned URLs from get_all_promotions.php.
  * 
- * TODO: Remove this file when bucket policy is updated to allow public read access
- * to arn:aws:s3:::edocument-app/avatars/*
+ * Note: Public read access is intentionally blocked on the S3 bucket.
+ * This endpoint provides controlled access for admin panel previews only.
  */
 
 header("Access-Control-Allow-Origin: *");

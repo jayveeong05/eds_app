@@ -23,7 +23,7 @@ class AdminMiddleware {
     public function verifyAdmin($idToken) {
         // Verify Firebase token
         $verifier = new JWTVerifier();
-        $verification = $verifier->verify($idToken, 'ANY_PROJECT_ID_FOR_NOW');
+        $verification = $verifier->verify($idToken, 'eds-app-1758d');
         
         if (!$verification['valid']) {
             http_response_code(401);

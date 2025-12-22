@@ -16,8 +16,9 @@ class _LoginScreenState extends State<LoginScreen> {
   String _errorMessage = '';
 
   Future<void> _handleAuthAction(
-    Future<Map<String, dynamic>> Function() action,
-  ) async {
+    Future<Map<String, dynamic>> Function() action, {
+    String loginType = 'email',
+  }) async {
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -36,18 +37,25 @@ class _LoginScreenState extends State<LoginScreen> {
       final status = userData['status'];
       final isNewUser = result['data']['is_new_user'] == true;
 
-      // Check if this is a new third-party user (Google/Apple)
-      if (isNewUser) {
-        // Navigate to Complete Profile for name confirmation
+      // Only auto-navigate to Complete Profile for third-party logins
+      // Email login should not create new users automatically
+      if (isNewUser && (loginType == 'google' || loginType == 'apple')) {
+        // Navigate to Complete Profile for third-party new users
         Navigator.pushNamed(
           context,
           '/complete-profile',
           arguments: {
-            'signInMethod': userData['login_method'] ?? 'google',
+            'signInMethod': userData['login_method'] ?? loginType,
             'email': userData['email'],
             'name': userData['name'] ?? '', // May be from Google/Apple
           },
         );
+      } else if (isNewUser && loginType == 'email') {
+        // Email login should not have new users (must register first)
+        // This shouldn't happen, but show error if it does
+        setState(() {
+          _errorMessage = 'Account not found. Please register first.';
+        });
       } else if (status == 'active') {
         Navigator.pushReplacementNamed(context, '/dashboard');
       } else {
@@ -59,52 +67,16 @@ class _LoginScreenState extends State<LoginScreen> {
           result['message'].toString().toLowerCase().contains(
             'user-not-found',
           )) {
-        // Show dialog offering registration
-        _showCreateAccountDialog();
+        // For email login, show error instead of offering to create account
+        setState(() {
+          _errorMessage = 'Account not found. Please register first.';
+        });
       } else {
         setState(() {
           _errorMessage = result['message'] ?? 'Authentication failed';
         });
       }
     }
-  }
-
-  void _showCreateAccountDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Account Not Found'),
-        content: const Text(
-          'No account exists with this email. Would you like to create one?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // Navigate to Complete Profile with pre-filled email/password
-              Navigator.pushNamed(
-                context,
-                '/complete-profile',
-                arguments: {
-                  'signInMethod': 'email',
-                  'email': _emailController.text.trim(),
-                  'password': _passwordController.text.trim(),
-                },
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3F51B5),
-              foregroundColor: Colors.white,
-            ),
-            child: const Text('Create Account'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -285,6 +257,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           _emailController.text.trim(),
                                           _passwordController.text.trim(),
                                         ),
+                                        loginType: 'email',
                                       );
                                     },
                                   ),
@@ -383,6 +356,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     onPressed: () => _handleAuthAction(
                                       () => _authService.loginWithGoogle(),
+                                      loginType: 'google',
                                     ),
                                   ),
                                 ),
@@ -409,6 +383,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                     onPressed: () => _handleAuthAction(
                                       () => _authService.loginWithApple(),
+                                      loginType: 'apple',
                                     ),
                                   ),
                                 ),
