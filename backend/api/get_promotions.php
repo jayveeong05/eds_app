@@ -13,7 +13,7 @@ try {
     $limit = max(1, min($limit, 100)); // Ensure limit is between 1 and 100
 
     // Get promotions with user info, ordered by newest first
-    $query = "SELECT p.id, p.image_url, p.description, p.created_at,
+    $query = "SELECT p.id, p.image_url, p.title, p.description, p.created_at,
                      u.email, u.profile_image_url
               FROM promotions p
               LEFT JOIN users u ON p.user_id = u.id
@@ -47,14 +47,22 @@ try {
             $imageUrl = $s3->getPresignedUrl(AWS_BUCKET, $imageUrl, 3600);
         }
         
+        // Generate presigned URL for user profile image if it exists
+        $profileImageUrl = $row['profile_image_url'];
+        if ($profileImageUrl && strpos($profileImageUrl, 'http') !== 0) {
+            // It's an S3 key, generate presigned URL
+            $profileImageUrl = $s3->getPresignedUrl(AWS_BUCKET, $profileImageUrl, 3600);
+        }
+        
         $promotions[] = [
             'id' => $row['id'],
             'image_url' => $imageUrl,
+            'title' => $row['title'],
             'description' => $row['description'],
             'created_at' => $row['created_at'],
             'user' => [
                 'email' => $row['email'] ?? 'Unknown User',
-                'profile_image_url' => $row['profile_image_url'] ?? null
+                'profile_image_url' => $profileImageUrl ?? null
             ]
         ];
     }

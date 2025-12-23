@@ -1,7 +1,7 @@
 <?php
 /**
  * Admin - Update Promotion
- * Update promotion description and/or image
+ * Update promotion description, title, and/or image
  */
 
 header("Access-Control-Allow-Origin: *");
@@ -46,10 +46,15 @@ try {
         exit;
     }
     
-    // Build update query dynamically based on provided fields
+    // Build dynamic update query
     $updates = [];
     $params = [':promotionId' => $data->promotionId];
     
+    if (isset($data->title)) {
+        $updates[] = "title = :title";
+        $params[':title'] = $data->title;
+    }
+
     if (isset($data->description)) {
         $updates[] = "description = :description";
         $params[':description'] = $data->description;
@@ -64,7 +69,7 @@ try {
         http_response_code(400);
         echo json_encode([
             'success' => false,
-            'message' => 'No fields to update. Provide description or image_url'
+            'message' => 'No fields to update. Provide title, description or image_url'
         ]);
         exit;
     }

@@ -25,6 +25,9 @@ if (empty($data->image_url) || empty($data->description)) {
     exit;
 }
 
+// Title is optional but recommended
+$title = isset($data->title) ? $data->title : null;
+
 // Optional: Admin can specify user_id, otherwise promotion is created without user_id
 $userId = null;
 
@@ -40,12 +43,13 @@ if (!empty($data->idToken)) {
 
 try {
     // Insert promotion (with PostgreSQL UUID casting)
-    $query = "INSERT INTO promotions (user_id, image_url, description) 
-              VALUES (:user_id::uuid, :image_url, :description)";
+    $query = "INSERT INTO promotions (user_id, image_url, title, description) 
+              VALUES (:user_id::uuid, :image_url, :title, :description)";
 
     $stmt = $db->prepare($query);
     $stmt->bindParam(':user_id', $userId);
     $stmt->bindParam(':image_url', $data->image_url);
+    $stmt->bindParam(':title', $title);
     $stmt->bindParam(':description', $data->description);
 
     if ($stmt->execute()) {

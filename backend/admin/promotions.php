@@ -48,6 +48,12 @@ $currentPage = 'promotions';
                         </div>
                         <small class="text-muted d-block mt-1">Upload an image for the promotion (JPG, PNG)</small>
                     </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input type="text" class="form-control" id="title" placeholder="Enter promotion title..." required>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label">Description</label>
                         <textarea class="form-control" id="description" rows="4" placeholder="Enter promotion description..." required></textarea>
@@ -86,6 +92,11 @@ $currentPage = 'promotions';
                         </div>
                         <small class="text-muted d-block mt-1">Upload new image to replace current one</small>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">Title</label>
+                        <input type="text" class="form-control" id="editTitle" required>
+                    </div>
+
                     <div class="mb-3">
                         <label class="form-label">Description</label>
                         <textarea class="form-control" id="editDescription" rows="4" required></textarea>
@@ -150,6 +161,7 @@ function displayPromotions(promotions) {
             <div class="card promo-card">
                 <img src="${imageUrl}" alt="Promotion" onerror="this.src='https://via.placeholder.com/400x200?text=Image+Not+Found'">
                 <div class="card-body">
+                    ${promo.title ? `<h6 class="card-title">${truncateText(promo.title, 50)}</h6>` : ''}
                     <p class="card-text">${truncateText(promo.description, 100)}</p>
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <small class="text-muted">
@@ -176,22 +188,24 @@ function displayPromotions(promotions) {
 // Add new promotion
 async function addPromotion() {
     const imageUrl = document.getElementById('imageUrl').value.trim();
+    const title = document.getElementById('title').value.trim();
     const description = document.getElementById('description').value.trim();
     
-    if (!imageUrl || !description) {
-        showToast('Please upload an image and enter description', 'warning');
+    if (!imageUrl || !title || !description) {
+        showToast('Please upload an image and enter title and description', 'warning');
         return;
     }
     
     try {
         const data = await apiRequest(API_BASE + '/add_promotion.php', {
-            body: { image_url: imageUrl, description: description }
+            body: { image_url: imageUrl, title: title, description: description }
         });
         
         if (data.success) {
             showToast('Promotion created successfully!', 'success');
             bootstrap.Modal.getInstance(document.getElementById('addPromoModal')).hide();
             document.getElementById('addPromoForm').reset();
+            document.getElementById('imageUrl').value = '';
             resetUploadPreview('imagePreview');
             loadPromotions();
         }
@@ -235,12 +249,12 @@ function openEditModal(promoId) {
     if (!promo) return;
     
     document.getElementById('editPromoId').value = promo.id;
-    document.getElementById('editImageUrl').value = promo.image_url;
+    // Don't set editImageUrl - it will be set only when user uploads new image
+    document.getElementById('editImageUrl').value = '';
+    document.getElementById('editTitle').value = promo.title || '';
     document.getElementById('editDescription').value = promo.description;
     
-    // Show current image preview using proxy URL
-    // Check if image_url is already a proxy URL or an S3 key
-    // API now returns presigned URLs directly
+    // Show current image preview using presigned URL
     const imageUrl = promo.image_url;
     
     const preview = document.getElementById('editImagePreview');
@@ -254,15 +268,17 @@ function openEditModal(promoId) {
 async function updatePromotion() {
     const promoId = document.getElementById('editPromoId').value;
     const imageUrl = document.getElementById('editImageUrl').value.trim();
+    const title = document.getElementById('editTitle').value.trim();
     const description = document.getElementById('editDescription').value.trim();
     
-    if (!description) {
-        showToast('Description is required', 'warning');
+    if (!title || !description) {
+        showToast('Title and description are required', 'warning');
         return;
     }
     
-    const requestBody = { promotionId: promoId, description: description };
-    if (imageUrl) {
+    const requestBody = { promotionId: promoId, title: title, description: description };
+    // Only include image_url if a new image was uploaded (editImageUrl will be empty or S3 key)
+    if (imageUrl && !imageUrl.startsWith('http')) {
         requestBody.image_url = imageUrl;
     }
     

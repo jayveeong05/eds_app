@@ -36,7 +36,7 @@ try {
     $offset = isset($data->offset) ? (int)$data->offset : 0;
     
     // Get all promotions with user info
-    $query = "SELECT p.id::text as id, p.image_url, p.description, p.created_at,
+    $query = "SELECT p.id::text as id, p.image_url, p.title, p.description, p.created_at,
                      p.user_id::text as user_id,
                      u.email, u.name, u.profile_image_url
               FROM promotions p
@@ -72,16 +72,24 @@ try {
             $imageUrl = $s3->getPresignedUrl(AWS_BUCKET, $imageUrl, 3600);
         }
         
+        // Generate presigned URL for user profile image if it exists
+        $profileImageUrl = $row['profile_image_url'];
+        if ($profileImageUrl && strpos($profileImageUrl, 'http') !== 0) {
+            // It's an S3 key, generate presigned URL
+            $profileImageUrl = $s3->getPresignedUrl(AWS_BUCKET, $profileImageUrl, 3600);
+        }
+        
         $promotions[] = [
             'id' => $row['id'],
             'image_url' => $imageUrl,
+            'title' => $row['title'],
             'description' => $row['description'],
             'created_at' => $row['created_at'],
             'user' => [
                 'id' => $row['user_id'],
                 'email' => $row['email'] ?? 'System',
                 'name' => $row['name'],
-                'profile_image_url' => $row['profile_image_url']
+                'profile_image_url' => $profileImageUrl ?? null
             ]
         ];
     }
