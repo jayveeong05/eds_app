@@ -49,7 +49,7 @@ class AuthService {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        await _saveSession(data, idToken!, loginMethod); // Save backend status
+        await saveSession(data, idToken!, loginMethod); // Save backend status
         return {'success': true, 'data': data};
       } else {
         return {
@@ -138,7 +138,53 @@ class AuthService {
     }
   }
 
-  Future<void> _saveSession(
+  // Check if user is logged in and has a session
+  Future<bool> isLoggedIn() async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    return token != null;
+  }
+
+  // Get current user status
+  Future<String> getUserStatus() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('user_status') ?? 'inactive';
+  }
+
+  // Get valid token, refreshing if needed
+  Future<String?> getValidToken({bool forceRefresh = false}) async {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+
+    final token = await user.getIdToken(forceRefresh);
+    if (token != null) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('token', token);
+    }
+    return token;
+  }
+
+  // Validate session against both local and Firebase
+  Future<bool> validateSession() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      await logout();
+      return false;
+    }
+
+    final token = await getValidToken();
+    if (token == null) {
+      await logout();
+      return false;
+    }
+
+    return true;
+  }
+
+  Future<void> saveSession(
     Map<String, dynamic> data,
     String firebaseToken,
     String loginMethod,

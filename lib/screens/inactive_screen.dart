@@ -4,7 +4,9 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../services/auth_service.dart';
+import 'profile_screen.dart';
 
+// Main navigation wrapper for inactive users
 class InactiveScreen extends StatefulWidget {
   const InactiveScreen({super.key});
 
@@ -13,6 +15,139 @@ class InactiveScreen extends StatefulWidget {
 }
 
 class _InactiveScreenState extends State<InactiveScreen> {
+  int _selectedIndex = 0; // Home for inactive
+
+  final List<Widget> _screens = [
+    const InactiveHomeContent(), // Home for inactive users
+    const ProfileScreen(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF0EEE9),
+      body: Stack(
+        children: [
+          // Main content
+          IndexedStack(index: _selectedIndex, children: _screens),
+          // Floating bottom nav
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 20,
+            child: _buildModernBottomNav(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernBottomNav() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFFFFF), // Pure White
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
+          // Top shadow for depth
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 16,
+            offset: const Offset(0, -4),
+          ),
+          // Bottom shadow for floating effect
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildNavItem(0, Icons.home_rounded, 'Home'),
+          _buildNavItem(1, Icons.person, 'Profile'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNavItem(int index, IconData icon, String label) {
+    final isSelected = _selectedIndex == index;
+    const primaryColor = Color(0xFF2C3E50); // Deep Slate
+
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _onItemTapped(index),
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Icon with rounded pill background for active state
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                padding: EdgeInsets.symmetric(
+                  horizontal: isSelected ? 12 : 0,
+                  vertical: isSelected ? 5 : 0,
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? primaryColor.withOpacity(0.1) // Deep Slate tint
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  icon,
+                  color: isSelected
+                      ? primaryColor
+                      : const Color(0xFFA39382), // Warm Taupe when not selected
+                  size: 22,
+                ),
+              ),
+              const SizedBox(height: 2),
+              // Label
+              AnimatedDefaultTextStyle(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                style: TextStyle(
+                  color: isSelected
+                      ? primaryColor
+                      : const Color(0xFFA39382), // Warm Taupe when not selected
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                ),
+                child: Text(label),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Home content for inactive users (QR code and activation)
+class InactiveHomeContent extends StatefulWidget {
+  const InactiveHomeContent({super.key});
+
+  @override
+  State<InactiveHomeContent> createState() => _InactiveHomeContentState();
+}
+
+class _InactiveHomeContentState extends State<InactiveHomeContent> {
   String? _userId;
   bool _isChecking = false;
 
@@ -80,15 +215,19 @@ class _InactiveScreenState extends State<InactiveScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF0EEE9), // Cloud Dancer
       appBar: AppBar(
         title: const Text("Account Inactive"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
+            color: const Color(0xFF2C3E50), // Deep Slate
             onPressed: () async {
               await AuthService().logout();
               if (context.mounted) {
-                Navigator.pushReplacementNamed(context, '/login');
+                Navigator.pushReplacementNamed(context, '/landing');
               }
             },
           ),
@@ -96,106 +235,119 @@ class _InactiveScreenState extends State<InactiveScreen> {
       ),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.only(
+            left: 32.0,
+            right: 32.0,
+            top: 32.0,
+            bottom: 100.0, // Extra padding for bottom nav
+          ),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Icon
-              const Icon(
-                Icons.pending_actions,
-                size: 80,
-                color: Colors.deepPurple,
-              ),
-              const SizedBox(height: 24),
-
-              // Title
-              const Text(
+              // Title - Bold geometric sans-serif
+              Text(
                 "Account Pending Approval",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontWeight: FontWeight.w800, // Extra bold geometric
+                  letterSpacing: -0.5, // Tight geometric spacing
+                ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
 
               // Subtitle
               Text(
                 "Show this QR code to admin for approval",
-                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: const Color(0xFF64748B),
+                ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 32), // Airy spacing
+              // Large Floating Card with QR Code
+              Container(
+                padding: const EdgeInsets.all(40),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(32), // Increased to 32px
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.04), // 4% opacity
+                      blurRadius: 32, // 32px blur for floating effect
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // QR Code (removed pending icon)
+                    if (_userId != null)
+                      QrImageView(
+                        data: 'EDSAPP:USER:$_userId',
+                        version: QrVersions.auto,
+                        size: 250.0,
+                        backgroundColor: Colors.white,
+                      )
+                    else
+                      const CircularProgressIndicator(
+                        color: Color(0xFF2C3E50),
+                      ), // Deep Slate
 
-              // QR Code
-              if (_userId != null)
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: QrImageView(
-                    data: 'EDSAPP:USER:$_userId',
-                    version: QrVersions.auto,
-                    size: 250.0,
-                    backgroundColor: Colors.white,
-                  ),
-                )
-              else
-                const CircularProgressIndicator(),
-
-              const SizedBox(height: 24),
-
-              // User ID Display
-              if (_userId != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.fingerprint,
-                        size: 20,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'ID: ${_userId!.substring(0, 8)}...',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[800],
-                          fontFamily: 'monospace',
+                    const SizedBox(height: 32), // Airy spacing
+                    // User ID Display inside card
+                    if (_userId != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(
+                            0xFF8A9A5B,
+                          ).withOpacity(0.05), // Soft Sage
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.fingerprint,
+                              size: 20,
+                              color: Color(0xFF8A9A5B), // Soft Sage
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'ID: ${_userId!.substring(0, 8)}...',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF1E293B),
+                                fontFamily: 'monospace',
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
+              ),
 
-              const SizedBox(height: 40),
-
+              const SizedBox(height: 32), // Airy spacing
               // Check Activation Button
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: _isChecking ? null : _checkActivationStatus,
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.deepPurple,
+                    padding: const EdgeInsets.symmetric(vertical: 18),
+                    backgroundColor: const Color(0xFF8A9A5B), // Soft Sage
                     foregroundColor: Colors.white,
+                    elevation: 4,
+                    shadowColor: const Color(
+                      0xFF8A9A5B,
+                    ).withOpacity(0.3), // Soft Sage
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(32), // 32px radius
                     ),
                   ),
                   icon: _isChecking
@@ -210,17 +362,23 @@ class _InactiveScreenState extends State<InactiveScreen> {
                       : const Icon(Icons.refresh),
                   label: Text(
                     _isChecking ? 'Checking...' : 'Check Activation Status',
-                    style: const TextStyle(fontSize: 16),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ),
 
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
 
               // Help Text
               Text(
                 'After admin approval, tap the button above to activate your account',
-                style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: const Color(0xFF94A3B8)),
                 textAlign: TextAlign.center,
               ),
             ],

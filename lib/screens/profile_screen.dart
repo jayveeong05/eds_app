@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
@@ -24,11 +25,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Map<String, dynamic> _userProfile = {};
   bool _isLoading = true;
-  bool _isEditing = false;
   bool _isSaving = false;
   bool _isUploading = false;
   bool _isChangingPassword = false;
-  bool _showPasswordForm = false;
+  bool _isEditingName = false;
+  bool _obscureCurrentPassword = true;
+  bool _obscureNewPassword = true;
+  bool _obscureConfirmPassword = true;
   String _errorMessage = '';
   String _loginMethod = 'email';
 
@@ -79,9 +82,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         headers: {'Content-Type': 'application/json'},
       );
 
-      print('Profile Response Status: ${response.statusCode}');
-      print('Profile Response Body: ${response.body}');
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
@@ -127,7 +127,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final data = jsonDecode(response.body);
         setState(() {
           _userProfile = data['user'];
-          _isEditing = false;
+          _isEditingName = false;
           _isSaving = false;
         });
         if (mounted) {
@@ -150,7 +150,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _uploadProfileImage() async {
-    // Show picker dialog
     showModalBottomSheet(
       context: context,
       builder: (context) => SafeArea(
@@ -190,7 +189,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
-      // Pick image
       final XFile? pickedFile = await _imagePicker.pickImage(
         source: source,
         maxWidth: 1024,
@@ -203,7 +201,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
-      // Upload to S3
       final File imageFile = File(pickedFile.path);
       final String? imageUrl = await UploadService.uploadProfilePicture(
         imageFile,
@@ -222,7 +219,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return;
       }
 
-      // Update profile with new URL
       await _updateProfileImage(imageUrl);
     } catch (e) {
       setState(() {
@@ -304,30 +300,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() => _isChangingPassword = true);
 
     try {
-      // Get current Firebase user
       final user = FirebaseAuth.instance.currentUser;
 
       if (user == null || user.email == null) {
         throw Exception('No user logged in');
       }
 
-      // Reauthenticate with current password
       final credential = EmailAuthProvider.credential(
         email: user.email!,
         password: _currentPasswordController.text,
       );
 
       await user.reauthenticateWithCredential(credential);
-
-      // Update to new password
       await user.updatePassword(_newPasswordController.text);
 
-      // Clear fields and hide form
       _currentPasswordController.clear();
       _newPasswordController.clear();
       _confirmPasswordController.clear();
-
-      setState(() => _showPasswordForm = false);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -364,365 +353,806 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
+  String _formatMemberSince(String? dateStr) {
+    if (dateStr == null) return 'Unknown';
+    try {
+      final date = DateTime.parse(dateStr);
+      final months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ];
+      return '${months[date.month - 1]} ${date.year}';
+    } catch (e) {
+      return 'Unknown';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Profile'),
-        backgroundColor: const Color(0xFF3F51B5), // EDS Royal Blue
-        foregroundColor: Colors.white,
-        centerTitle: false, // Align left
-        actions: [
-          if (!_isEditing && !_isLoading)
-            IconButton(
-              icon: const Icon(Icons.edit),
-              onPressed: () {
-                setState(() {
-                  _isEditing = true;
-                });
-              },
-            ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    _errorMessage,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _loadProfile,
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            )
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Profile Image with Upload Button
-                  Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 60,
-                        backgroundColor: const Color(
-                          0xFFE8EAF6,
-                        ), // Light EDS blue
-                        backgroundImage:
-                            _userProfile['profile_image_url'] != null
-                            ? NetworkImage(_userProfile['profile_image_url'])
-                            : null,
-                        child: _userProfile['profile_image_url'] == null
-                            ? Text(
-                                (_userProfile['email'] ?? 'U')[0].toUpperCase(),
-                                style: const TextStyle(
-                                  fontSize: 40,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF3F51B5), // EDS Royal Blue
-                                ),
-                              )
-                            : null,
-                      ),
-                      if (_isUploading)
-                        const Positioned.fill(
-                          child: CircleAvatar(
-                            radius: 60,
-                            backgroundColor: Colors.black54,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: InkWell(
-                          onTap: _isUploading ? null : _uploadProfileImage,
-                          child: CircleAvatar(
-                            radius: 20,
-                            backgroundColor: const Color(
-                              0xFF3F51B5,
-                            ), // EDS Royal Blue
-                            child: const Icon(
-                              Icons.camera_alt,
-                              size: 20,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Email (Read-only)
-                  ListTile(
-                    leading: const Icon(Icons.email),
-                    title: const Text('Email'),
-                    subtitle: Text(_userProfile['email'] ?? 'N/A'),
-                  ),
-
-                  // Name (Editable)
-                  if (_isEditing)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      child: TextField(
-                        controller: _nameController,
-                        decoration: const InputDecoration(
-                          labelText: 'Name',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.person),
-                        ),
-                      ),
-                    )
-                  else
-                    ListTile(
-                      leading: const Icon(Icons.person),
-                      title: const Text('Name'),
-                      subtitle: Text(
-                        _userProfile['name']?.isEmpty ?? true
-                            ? 'Not set'
-                            : _userProfile['name'],
-                      ),
+      backgroundColor: const Color(0xFFF0EEE9), // Cloud Dancer background
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF2C3E50),
+                ), // Deep Slate
+              )
+            : _errorMessage.isNotEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _errorMessage,
+                      style: const TextStyle(color: Colors.red),
                     ),
-
-                  // Status
-                  ListTile(
-                    leading: Icon(
-                      _userProfile['status'] == 'active'
-                          ? Icons.check_circle
-                          : Icons.pending,
-                      color: _userProfile['status'] == 'active'
-                          ? Colors.green
-                          : Colors.orange,
-                    ),
-                    title: const Text('Account Status'),
-                    subtitle: Text(
-                      _userProfile['status'] ?? 'Unknown',
-                      style: TextStyle(
-                        color: _userProfile['status'] == 'active'
-                            ? Colors.green
-                            : Colors.orange,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-
-                  // Login Method
-                  ListTile(
-                    leading: Icon(
-                      _loginMethod == 'google'
-                          ? Icons.g_mobiledata
-                          : _loginMethod == 'apple'
-                          ? Icons.apple
-                          : Icons.email,
-                      color: const Color(0xFF3F51B5), // EDS Royal Blue
-                    ),
-                    title: const Text('Login Method'),
-                    subtitle: Text(
-                      _loginMethod == 'google'
-                          ? 'Google Sign-In'
-                          : _loginMethod == 'apple'
-                          ? 'Apple Sign-In'
-                          : 'Email/Password',
-                    ),
-                  ),
-
-                  // Change Password Section (only for email users)
-                  if (_loginMethod == 'email') ...[
                     const SizedBox(height: 16),
-
-                    // Toggle button to show/hide password form
-                    if (!_showPasswordForm)
-                      OutlinedButton.icon(
-                        onPressed: () {
-                          setState(() => _showPasswordForm = true);
-                        },
-                        icon: const Icon(Icons.lock_reset),
-                        label: const Text('Change Password'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: const Color(
-                            0xFF3F51B5,
-                          ), // EDS Royal Blue
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 12,
-                          ),
-                        ),
-                      ),
-
-                    // Password form (hidden by default)
-                    if (_showPasswordForm) ...[
-                      const SizedBox(height: 8),
-                      const Divider(),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Change Password',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.close),
-                            onPressed: () {
-                              setState(() {
-                                _showPasswordForm = false;
-                                _currentPasswordController.clear();
-                                _newPasswordController.clear();
-                                _confirmPasswordController.clear();
-                              });
-                            },
-                            tooltip: 'Cancel',
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: _currentPasswordController,
-                        decoration: const InputDecoration(
-                          labelText: 'Current Password',
-                          prefixIcon: Icon(Icons.lock_outline),
-                          border: OutlineInputBorder(),
-                        ),
-                        obscureText: true,
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _newPasswordController,
-                        decoration: const InputDecoration(
-                          labelText: 'New Password',
-                          prefixIcon: Icon(Icons.lock),
-                          border: OutlineInputBorder(),
-                        ),
-                        obscureText: true,
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: _confirmPasswordController,
-                        decoration: const InputDecoration(
-                          labelText: 'Confirm New Password',
-                          prefixIcon: Icon(Icons.lock),
-                          border: OutlineInputBorder(),
-                        ),
-                        obscureText: true,
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton(
-                              onPressed: () {
-                                setState(() {
-                                  _showPasswordForm = false;
-                                  _currentPasswordController.clear();
-                                  _newPasswordController.clear();
-                                  _confirmPasswordController.clear();
-                                });
-                              },
-                              child: const Text('Cancel'),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            flex: 2,
-                            child: ElevatedButton.icon(
-                              onPressed: _isChangingPassword
-                                  ? null
-                                  : _changePassword,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(
-                                  0xFF3F51B5,
-                                ), // EDS Royal Blue
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
-                              ),
-                              icon: _isChangingPassword
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Icon(Icons.save),
-                              label: Text(
-                                _isChangingPassword ? 'Saving...' : 'Save',
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-
-                  const SizedBox(height: 24),
-
-                  // Action Buttons
-                  if (_isEditing)
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        OutlinedButton(
-                          onPressed: _isSaving
-                              ? null
-                              : () {
-                                  setState(() {
-                                    _isEditing = false;
-                                    _nameController.text =
-                                        _userProfile['name'] ?? '';
-                                  });
-                                },
-                          child: const Text('Cancel'),
-                        ),
-                        ElevatedButton(
-                          onPressed: _isSaving ? null : _saveProfile,
-                          child: _isSaving
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text('Save Changes'),
-                        ),
-                      ],
-                    )
-                  else
-                    ElevatedButton.icon(
-                      onPressed: () async {
-                        await AuthService().logout();
-                        if (context.mounted) {
-                          Navigator.pushReplacementNamed(context, '/login');
-                        }
-                      },
-                      icon: const Icon(Icons.logout),
-                      label: const Text('Logout'),
+                    ElevatedButton(
+                      onPressed: _loadProfile,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
+                        backgroundColor: const Color(0xFF2C3E50), // Deep Slate
                         foregroundColor: Colors.white,
                       ),
+                      child: const Text('Retry'),
                     ),
+                  ],
+                ),
+              )
+            : Column(
+                children: [
+                  // PREMIUM HEADER SECTION WITH GRADIENT
+                  Container(
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Color(0xFFE8E6E1), // Darker Cloud Dancer shade
+                          Color(0xFFF0EEE9), // Cloud Dancer
+                        ],
+                      ),
+                    ),
+                    padding: const EdgeInsets.only(
+                      top: 24,
+                      bottom: 32,
+                      left: 24,
+                      right: 24,
+                    ),
+                    child: Column(
+                      children: [
+                        // Profile Title - 24sp Bold
+                        Text(
+                          'Profile',
+                          style: GoogleFonts.inter(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF1E293B),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Avatar with Subtle Shadow
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Stack(
+                            children: [
+                              // Perfect Circle Avatar
+                              _userProfile['profile_image_url'] != null &&
+                                      (_userProfile['profile_image_url']
+                                              as String)
+                                          .isNotEmpty
+                                  ? Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 4,
+                                        ),
+                                      ),
+                                      child: CircleAvatar(
+                                        radius: 60,
+                                        backgroundImage: NetworkImage(
+                                          _userProfile['profile_image_url'],
+                                        ),
+                                        onBackgroundImageError: (_, __) {},
+                                      ),
+                                    )
+                                  : Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Colors.white,
+                                          width: 4,
+                                        ),
+                                      ),
+                                      child: CircleAvatar(
+                                        radius: 60,
+                                        backgroundColor: const Color(
+                                          0xFF2C3E50, // Deep Slate
+                                        ).withOpacity(0.1),
+                                        child: const Icon(
+                                          Icons.person,
+                                          size: 50,
+                                          color: Color(0xFF8A9A5B), // Soft Sage
+                                        ),
+                                      ),
+                                    ),
+
+                              // Uploading overlay
+                              if (_isUploading)
+                                Positioned.fill(
+                                  child: CircleAvatar(
+                                    radius: 60,
+                                    backgroundColor: Colors.black54,
+                                    child: const CircularProgressIndicator(
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+
+                              // Perfect Circle Camera Button
+                              Positioned(
+                                bottom: 0,
+                                right: 0,
+                                child: InkWell(
+                                  onTap: _isUploading
+                                      ? null
+                                      : _uploadProfileImage,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: const Color(
+                                        0xFF8A9A5B,
+                                      ), // Soft Sage
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 3,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(
+                                            0xFF2C3E50, // Deep Slate
+                                          ).withOpacity(0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.camera_alt,
+                                      size: 18,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // MAIN SCROLLABLE CONTENT
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.only(
+                        left: 24,
+                        right: 24,
+                        top: 24,
+                        bottom: 120, // Padding for floating nav
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // CONSOLIDATED ACCOUNT SETTINGS CARD
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Section Header
+                                Padding(
+                                  padding: const EdgeInsets.all(24),
+                                  child: Text(
+                                    'Personal Info',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF334155),
+                                    ),
+                                  ),
+                                ),
+                                const Divider(height: 1),
+
+                                // Name Row - 20px vertical spacing
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 20,
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 90,
+                                        child: Text(
+                                          'Name',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: const Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 20),
+                                      Expanded(
+                                        child: _isEditingName
+                                            ? TextFormField(
+                                                controller: _nameController,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: const Color(
+                                                    0xFF1E293B,
+                                                  ),
+                                                ),
+                                                decoration: InputDecoration(
+                                                  border: OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                  contentPadding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 16,
+                                                        vertical: 12,
+                                                      ),
+                                                ),
+                                              )
+                                            : Text(
+                                                _userProfile['name']?.isEmpty ??
+                                                        true
+                                                    ? 'Not set'
+                                                    : _userProfile['name'],
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: const Color(
+                                                    0xFF1E293B,
+                                                  ),
+                                                ),
+                                              ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      InkWell(
+                                        onTap: _isSaving
+                                            ? null
+                                            : () {
+                                                if (_isEditingName) {
+                                                  _saveProfile();
+                                                } else {
+                                                  setState(
+                                                    () => _isEditingName = true,
+                                                  );
+                                                }
+                                              },
+                                        child: Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: const Color(
+                                              0xFF2C3E50, // Deep Slate
+                                            ).withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Icon(
+                                            _isEditingName
+                                                ? Icons.check
+                                                : Icons.edit,
+                                            color: const Color(
+                                              0xFF8A9A5B,
+                                            ), // Soft Sage
+                                            size: 18,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Divider(height: 1),
+
+                                // Email Row
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 20,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 90,
+                                        child: Text(
+                                          'Email',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: const Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 20),
+                                      Expanded(
+                                        child: Text(
+                                          _userProfile['email'] ?? 'No email',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w500,
+                                            color: const Color(0xFF1E293B),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Divider(height: 1),
+
+                                // Status Row with Emerald Green Badge
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 20,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 90,
+                                        child: Text(
+                                          'Status',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: const Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 20),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color:
+                                              (_userProfile['status'] ?? '') ==
+                                                  'active'
+                                              ? const Color(
+                                                  0xFF10B981,
+                                                ) // Emerald Green
+                                              : const Color(0xFF9CA3AF),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          (_userProfile['status'] ?? 'unknown')
+                                              .toUpperCase(),
+                                          style: GoogleFonts.inter(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Role Row (if admin)
+                                if ((_userProfile['role'] ?? '') ==
+                                    'admin') ...[
+                                  const Divider(height: 1),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 20,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        SizedBox(
+                                          width: 90,
+                                          child: Text(
+                                            'Role',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w500,
+                                              color: const Color(0xFF64748B),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 20),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF8B5CF6),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            'ADMIN',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.white,
+                                              letterSpacing: 0.5,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                                const Divider(height: 1),
+
+                                // Login Method Row with Neutral Gray Badge
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 20,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 90,
+                                        child: Text(
+                                          'Login',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: const Color(0xFF64748B),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 20),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF94A3B8),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          (_loginMethod == 'google'
+                                                  ? 'GOOGLE'
+                                                  : _loginMethod == 'apple'
+                                                  ? 'APPLE'
+                                                  : 'EMAIL')
+                                              .toUpperCase(),
+                                          style: GoogleFonts.inter(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                            letterSpacing: 0.5,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                                // Change Password Section (if email login)
+                                if (_loginMethod == 'email') ...[
+                                  const Divider(height: 1),
+                                  ExpansionTile(
+                                    tilePadding: const EdgeInsets.symmetric(
+                                      horizontal: 24,
+                                      vertical: 8,
+                                    ),
+                                    leading: const Icon(
+                                      Icons.lock_outline,
+                                      color: Color(0xFF64748B),
+                                    ),
+                                    title: Text(
+                                      'Change Password',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: const Color(0xFF334155),
+                                      ),
+                                    ),
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.all(24),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            TextField(
+                                              controller:
+                                                  _currentPasswordController,
+                                              decoration: InputDecoration(
+                                                labelText: 'Current Password',
+                                                prefixIcon: const Icon(
+                                                  Icons.lock_outline,
+                                                ),
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                suffixIcon: IconButton(
+                                                  icon: Icon(
+                                                    _obscureCurrentPassword
+                                                        ? Icons.visibility_off
+                                                        : Icons.visibility,
+                                                  ),
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      _obscureCurrentPassword =
+                                                          !_obscureCurrentPassword;
+                                                    });
+                                                  },
+                                                ),
+                                              ),
+                                              obscureText:
+                                                  _obscureCurrentPassword,
+                                            ),
+                                            const SizedBox(height: 16),
+                                            TextField(
+                                              controller:
+                                                  _newPasswordController,
+                                              decoration: InputDecoration(
+                                                labelText: 'New Password',
+                                                prefixIcon: const Icon(
+                                                  Icons.lock,
+                                                ),
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                suffixIcon: IconButton(
+                                                  icon: Icon(
+                                                    _obscureNewPassword
+                                                        ? Icons.visibility_off
+                                                        : Icons.visibility,
+                                                  ),
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      _obscureNewPassword =
+                                                          !_obscureNewPassword;
+                                                    });
+                                                  },
+                                                ),
+                                              ),
+                                              obscureText: _obscureNewPassword,
+                                            ),
+                                            const SizedBox(height: 16),
+                                            TextField(
+                                              controller:
+                                                  _confirmPasswordController,
+                                              decoration: InputDecoration(
+                                                labelText:
+                                                    'Confirm New Password',
+                                                prefixIcon: const Icon(
+                                                  Icons.lock,
+                                                ),
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                ),
+                                                suffixIcon: IconButton(
+                                                  icon: Icon(
+                                                    _obscureConfirmPassword
+                                                        ? Icons.visibility_off
+                                                        : Icons.visibility,
+                                                  ),
+                                                  onPressed: () {
+                                                    setState(() {
+                                                      _obscureConfirmPassword =
+                                                          !_obscureConfirmPassword;
+                                                    });
+                                                  },
+                                                ),
+                                              ),
+                                              obscureText:
+                                                  _obscureConfirmPassword,
+                                            ),
+                                            const SizedBox(height: 20),
+                                            SizedBox(
+                                              width: double.infinity,
+                                              child: ElevatedButton(
+                                                onPressed: _isChangingPassword
+                                                    ? null
+                                                    : _changePassword,
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: const Color(
+                                                    0xFF2C3E50, // Deep Slate
+                                                  ),
+                                                  foregroundColor: Colors.white,
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        vertical: 16,
+                                                      ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          16,
+                                                        ),
+                                                  ),
+                                                ),
+                                                child: _isChangingPassword
+                                                    ? const SizedBox(
+                                                        width: 20,
+                                                        height: 20,
+                                                        child:
+                                                            CircularProgressIndicator(
+                                                              strokeWidth: 2,
+                                                              color:
+                                                                  Colors.white,
+                                                            ),
+                                                      )
+                                                    : Text(
+                                                        'Change Password',
+                                                        style:
+                                                            GoogleFonts.inter(
+                                                              fontSize: 15,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                            ),
+                                                      ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ] else ...[
+                                  const Divider(height: 1),
+                                  Padding(
+                                    padding: const EdgeInsets.all(24),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFDFEEFF),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: const Color(0xFF93C5FD),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.info_outline,
+                                            color: Color(0xFF1E40AF),
+                                            size: 20,
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Text(
+                                              'Security managed by ${_loginMethod == 'google'
+                                                  ? 'Google'
+                                                  : _loginMethod == 'apple'
+                                                  ? 'Apple'
+                                                  : 'external provider'}. Update your password via your account provider.',
+                                              style: GoogleFonts.inter(
+                                                color: const Color(0xFF1E40AF),
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+
+                          // LOGOUT BUTTON SECTION - Outlined Red
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: () async {
+                                await AuthService().logout();
+                                if (context.mounted) {
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    '/login',
+                                  );
+                                }
+                              },
+                              icon: const Icon(Icons.logout),
+                              label: Text(
+                                'Logout',
+                                style: GoogleFonts.inter(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(
+                                  0xFFDC2626,
+                                ), // Softer coral red
+                                side: const BorderSide(
+                                  color: Color(0xFFDC2626),
+                                  width: 1.5,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 24),
+
+                          // Footer - Member Since
+                          Center(
+                            child: Text(
+                              'Member since ${_formatMemberSince(_userProfile['created_at'])}',
+                              style: GoogleFonts.inter(
+                                fontSize: 12,
+                                color: const Color(0xFF94A3B8),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
-            ),
+      ),
     );
   }
 }

@@ -89,165 +89,190 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFF0F3FF,
-      ), // Light blue-gray matching card theme
-      appBar: AppBar(
-        title: const Text('Promotions'),
-        backgroundColor: const Color(0xFF3F51B5), // EDS Royal Blue
-        foregroundColor: Colors.white,
-        centerTitle: false, // Align title to the left
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _fetchPromotions,
-            tooltip: 'Refresh Promotions',
-          ),
-        ],
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    _errorMessage,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _fetchPromotions,
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            )
-          : _promotions.isEmpty
-          ? const Center(child: Text('No promotions available'))
-          : Stack(
-              children: [
-                // Main card in center
-                Center(
-                  child: SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.75,
-                    height: MediaQuery.of(context).size.height * 0.7,
-                    child: PageView.builder(
-                      controller: _pageController,
-                      onPageChanged: (virtualIndex) {
-                        setState(() {
-                          _currentPage = virtualIndex % _realPageCount;
-                        });
-                      },
-                      itemCount: _virtualPageCount,
-                      itemBuilder: (context, virtualIndex) {
-                        final realIndex = virtualIndex % _realPageCount;
-                        final promo = _promotions[realIndex];
-                        return _buildPromotionCard(promo);
-                      },
+      backgroundColor: const Color(0xFFF0EEE9), // Cloud Dancer background
+      body: SafeArea(
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF2C3E50),
+                ), // Deep Slate
+              )
+            : _errorMessage.isNotEmpty
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _errorMessage,
+                      style: const TextStyle(color: Colors.red),
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _fetchPromotions,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2C3E50), // Deep Slate
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Retry'),
+                    ),
+                  ],
                 ),
-
-                // Left arrow (circular navigation)
-                if (_promotions.isNotEmpty)
-                  Positioned(
-                    left: 4,
-                    top: 0,
-                    bottom: 0,
-                    child: Center(
-                      child: _buildArrowButton(
-                        icon: Icons.arrow_back_ios,
-                        onPressed: () {
-                          if (_currentPage > 0) {
-                            _pageController.previousPage(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeInOut,
-                            );
-                          } else {
-                            // Jump to last page
-                            _pageController.jumpToPage(_promotions.length - 1);
-                          }
-                        },
-                      ),
+              )
+            : _promotions.isEmpty
+            ? const Center(child: Text('No promotions available'))
+            : Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Promotions',
+                          style: Theme.of(context).textTheme.headlineMedium,
+                        ),
+                        // Refresh button
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(
+                              0xFF2C3E50,
+                            ).withOpacity(0.1), // Deep Slate
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.refresh,
+                              size: 20,
+                              color: Color(0xFF2C3E50), // Deep Slate
+                            ),
+                            padding: const EdgeInsets.all(8),
+                            constraints: const BoxConstraints(),
+                            onPressed: _fetchPromotions,
+                            tooltip: 'Refresh',
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
+                    const SizedBox(height: 24),
 
-                // Right arrow (circular navigation)
-                if (_promotions.isNotEmpty)
-                  Positioned(
-                    right: 4,
-                    top: 0,
-                    bottom: 0,
-                    child: Center(
-                      child: _buildArrowButton(
-                        icon: Icons.arrow_forward_ios,
-                        onPressed: () {
-                          if (_currentPage < _promotions.length - 1) {
-                            _pageController.nextPage(
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeInOut,
-                            );
-                          } else {
-                            // Jump to first page
-                            _pageController.jumpToPage(0);
-                          }
-                        },
-                      ),
-                    ),
-                  ),
-
-                // Page indicator at bottom
-                Positioned(
-                  bottom: 40,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.6),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '${_currentPage + 1} / ${_promotions.length}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                    // Card with PageView
+                    Expanded(
+                      child: Center(
+                        child: SizedBox(
+                          height: 600,
+                          child: PageView.builder(
+                            controller: _pageController,
+                            onPageChanged: (virtualIndex) {
+                              setState(() {
+                                _currentPage = virtualIndex % _realPageCount;
+                              });
+                            },
+                            itemCount: _virtualPageCount,
+                            itemBuilder: (context, virtualIndex) {
+                              final realIndex = virtualIndex % _realPageCount;
+                              final promo = _promotions[realIndex];
+                              return _buildPromotionCard(promo);
+                            },
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
 
-  Widget _buildArrowButton({
-    required IconData icon,
-    required VoidCallback onPressed,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: IconButton(
-        icon: Icon(icon, color: const Color(0xFF3F51B5)), // EDS Royal Blue
-        onPressed: onPressed,
-        iconSize: 28,
+                    // Navigation Controls (Bottom Row)
+                    const SizedBox(height: 32),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // Left Arrow
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.04),
+                                blurRadius: 24,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.arrow_back_ios_new,
+                              color: Color(0xFFA39382), // Warm Taupe
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              _pageController.previousPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            },
+                            tooltip: 'Previous',
+                          ),
+                        ),
+                        const SizedBox(width: 24),
+
+                        // Dot Indicators
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: List.generate(_promotions.length, (index) {
+                            final isActive = index == _currentPage;
+                            return AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              margin: const EdgeInsets.symmetric(horizontal: 4),
+                              width: isActive ? 32 : 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: isActive
+                                    ? const Color(0xFF8A9A5B) // Soft Sage
+                                    : const Color(0xFFD1D5DB),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                            );
+                          }),
+                        ),
+
+                        const SizedBox(width: 24),
+                        // Right Arrow
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF8A9A5B), // Soft Sage
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(
+                                  0xFF8A9A5B,
+                                ).withOpacity(0.3), // Soft Sage
+                                blurRadius: 16,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: IconButton(
+                            icon: const Icon(
+                              Icons.arrow_forward_ios,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              _pageController.nextPage(
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                            },
+                            tooltip: 'Next',
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 100), // Add padding for floating nav
+                  ],
+                ),
+              ),
       ),
     );
   }
@@ -258,179 +283,156 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
     final profileImageUrl = user['profile_image_url'];
     final date = _formatDate(promo['created_at']);
 
-    return Card(
-      elevation: 8,
-      color: const Color(0xFFF5F7FF), // Light blue tint matching EDS theme
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Column(
-        children: [
-          // Section 1: User Info Header
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: const BoxDecoration(
-              color: Color(0xFF3F51B5), // EDS Royal Blue
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(20),
-                topRight: Radius.circular(20),
-              ),
+    return GestureDetector(
+      onTap: () => _showFullscreenImage(context, promo['image_url']),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
             ),
-            child: Row(
-              children: [
-                // Profile Picture
-                CircleAvatar(
-                  radius: 25,
-                  backgroundColor: Colors.white.withOpacity(
-                    0.3,
-                  ), // Two-tone effect
-                  backgroundImage: profileImageUrl != null
-                      ? NetworkImage(profileImageUrl)
-                      : null,
-                  child: profileImageUrl == null
-                      ? Text(
-                          email[0].toUpperCase(),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Column(
+            children: [
+              // Top Half: Image with Gradient Overlay and Author Info
+              Expanded(
+                flex: 5,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Background Image
+                    Image.network(
+                      promo['image_url'],
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[300],
+                          child: Center(
+                            child: Icon(
+                              Icons.broken_image,
+                              size: 80,
+                              color: Colors.grey[500],
+                            ),
                           ),
-                        )
-                      : null,
-                ),
-                const SizedBox(width: 12),
-                // Name and Date
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        email.split('@')[0],
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: Colors.white,
+                        );
+                      },
+                    ),
+
+                    // Gradient Overlay (bottom to transparent)
+                    Positioned.fill(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [Colors.black54, Colors.transparent],
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Row(
+                    ),
+
+                    // Author Info (Bottom Left)
+                    Positioned(
+                      left: 24,
+                      bottom: 24,
+                      child: Row(
                         children: [
-                          const Icon(
-                            Icons.calendar_today,
-                            size: 14,
-                            color: Colors.white70,
+                          // Avatar
+                          CircleAvatar(
+                            radius: 24,
+                            backgroundColor: Colors.white.withOpacity(0.3),
+                            backgroundImage:
+                                profileImageUrl != null &&
+                                    profileImageUrl.toString().isNotEmpty
+                                ? NetworkImage(profileImageUrl)
+                                : null,
+                            child:
+                                profileImageUrl == null ||
+                                    profileImageUrl.toString().isEmpty
+                                ? Text(
+                                    email[0].toUpperCase(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  )
+                                : null,
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            date,
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                            ),
+                          const SizedBox(width: 12),
+                          // Name
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                email.split('@')[0],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              Text(
+                                date,
+                                style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
                         ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Divider
-          const Divider(height: 1),
-
-          // Section 2: Image
-          Expanded(
-            flex: 2,
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              child: GestureDetector(
-                onTap: () {
-                  _showFullscreenImage(context, promo['image_url']);
-                },
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: Image.network(
-                    promo['image_url'],
-                    fit: BoxFit.contain,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.broken_image,
-                              size: 60,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Image not available',
-                              style: TextStyle(color: Colors.grey[600]),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ),
-
-          // Divider
-          const Divider(height: 1),
-
-          // Section 3: Description
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.description,
-                      size: 20,
-                      color: Color(0xFF3F51B5),
-                    ), // EDS Royal Blue
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Description',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  promo['description'] ?? 'No description available',
-                  style: TextStyle(
-                    color: Colors.grey[800],
-                    fontSize: 15,
-                    height: 1.5,
+              ),
+
+              // Bottom Half: Content
+              Expanded(
+                flex: 2,
+                child: Container(
+                  width: double.infinity,
+                  color: Colors.white,
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Title
+                      Text(
+                        promo['title']?.isEmpty ?? true
+                            ? 'Untitled Post'
+                            : promo['title'],
+                        style: Theme.of(context).textTheme.headlineSmall,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 8),
+
+                      // Description
+                      Expanded(
+                        child: Text(
+                          promo['description'] ?? '',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                          maxLines: 4,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
