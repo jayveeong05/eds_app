@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:url_launcher/url_launcher.dart';
+import 'pdf_viewer_screen.dart';
 
 class CodeDetailScreen extends StatefulWidget {
   final String machineCode;
@@ -63,25 +63,17 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
     }
   }
 
-  Future<void> _openPdf(String url) async {
-    try {
-      final uri = Uri.parse(url);
-      final bool launched = await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
+  Future<void> _openPdf(String url, String month) async {
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PdfViewerScreen(
+            pdfUrl: url,
+            title: '${widget.machineCode} - $month',
+          ),
+        ),
       );
-
-      if (!launched && mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Unable to open PDF')));
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error opening PDF: $e')));
-      }
     }
   }
 
@@ -259,10 +251,16 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
                                   Icons.open_in_new,
                                   color: Color(0xFF1A73E8), // Electric Blue
                                 ),
-                                onPressed: () => _openPdf(invoice['pdf_url']),
+                                onPressed: () => _openPdf(
+                                  invoice['pdf_url'],
+                                  invoice['month'],
+                                ),
                                 tooltip: 'Open PDF',
                               ),
-                              onTap: () => _openPdf(invoice['pdf_url']),
+                              onTap: () => _openPdf(
+                                invoice['pdf_url'],
+                                invoice['month'],
+                              ),
                             ),
                           );
                         },

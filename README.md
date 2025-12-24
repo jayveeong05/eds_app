@@ -70,17 +70,28 @@ A mobile application for managing e-documents, promotions, and invoices with Fir
 - **Replacement Strategy** - New uploads replace old data (max 12 months per machine)
 - **Filename Parsing** - Automatic extraction of machine code and month from filename
 - **Two-level Navigation** - Machine codes → Monthly invoices
-- **PDF Viewer Integration** - Opens PDFs via presigned S3 URLs
+- **In-app PDF Viewer** - Opens PDFs directly in app with zoom and scroll
 - **Real-time Feedback** - Shows valid/invalid files with detailed error messages
 - **Progress Tracking** - Upload progress bar with file count
 - **S3 Storage** - Original filenames preserved in cloud storage
 
+### 📚 Knowledge Base
+- **Document Library** - Centralized PDF documentation storage
+- **Search Functionality** - Search documents by title or subtitle
+- **Admin Upload Portal** - Web interface for uploading PDFs with metadata
+- **In-app PDF Viewer** - Seamless PDF viewing with zoom and text selection
+- **Metadata Management** - Title and subtitle for each document
+- **S3 Integration** - Secure file storage with presigned URL access
+- **Pull-to-refresh** - Update document list
+
 ### 🧭 Navigation
-- **Bottom navigation bar** - 4 tabs (Home, Promotions, Invoices, Profile)
-- **EDS branded selection** - Royal blue for active tab
-- **Tab state management** - Persistent across sessions
+- **5-Tab Bottom Navigation** - Promotions | Invoices | Home | Knowledge Base | Profile
+- **Center-Elevated Home Button** - Prominent circular button with gradient background
+- **EDS Branded Selection** - Soft Sage for active tab
+- **Tab State Management** - Persistent across sessions
 - **Material Design 3** - Modern UI components
-- **Consistent AppBars** - All screens use EDS royal blue with left-aligned titles
+- **Consistent AppBars** - All screens use Slate Gray/Royal Blue with logout option
+- **Logout Functionality** - Quick logout from home screen with confirmation dialog
 
 ---
 
@@ -96,6 +107,7 @@ A mobile application for managing e-documents, promotions, and invoices with Fir
 - **Shared Preferences** - Local storage
 - **QR Flutter** - QR code generation
 - **Image Picker** - Photo selection
+- **Syncfusion PDF Viewer** - In-app PDF viewing with zoom and text selection
 
 ### Backend (PHP)
 - **PHP 8+** - Server-side logic
@@ -124,13 +136,17 @@ A mobile application for managing e-documents, promotions, and invoices with Fir
 eds_app/
 ├── lib/
 │   ├── screens/
-│   │   ├── dashboard_screen.dart       # Home with latest promotions
+│   │   ├── landing_screen.dart         # Initial auth screen
 │   │   ├── login_screen.dart           # Auth screen with registration dialog
 │   │   ├── complete_profile_screen.dart # Unified registration/profile completion
 │   │   ├── inactive_screen.dart        # QR code for activation
-│   │   ├── main_navigation.dart        # Bottom nav wrapper
+│   │   ├── main_navigation.dart        # 5-tab bottom nav wrapper
+│   │   ├── home_screen.dart            # Combined promotions + invoices dashboard
 │   │   ├── promotions_screen.dart      # Promotion carousel with refresh
 │   │   ├── invoices_screen.dart        # Invoice listing
+│   │   ├── code_detail_screen.dart     # Invoice detail with PDF viewer
+│   │   ├── knowledge_base_screen.dart  # Document library with search
+│   │   ├── pdf_viewer_screen.dart      # In-app PDF viewer
 │   │   └── profile_screen.dart         # User profile & settings
 │   ├── services/
 │   │   ├── auth_service.dart           # Authentication logic
@@ -305,6 +321,10 @@ In Flutter files, update endpoints:
 | `/api/upload.php` | POST | Upload file to S3, return S3 key | Token |
 | `/api/add_promotion.php` | POST | Create new promotion | Token |
 | `/api/check_activation.php` | POST | Check user activation status | Token |
+| `/api/get_knowledge_base.php` | GET | Fetch knowledge base documents with search | None |
+| `/api/upload_knowledge_base.php` | POST | Upload PDF to knowledge base (admin) | None |
+| `/api/delete_knowledge_base.php` | POST | Delete knowledge base item (admin) | None |
+| `/api/get_presigned_url.php` | POST | Generate presigned URL for S3 file | None |
 
 **Authentication:** Include `idToken` in request body for protected endpoints.
 
@@ -343,6 +363,15 @@ In Flutter files, update endpoints:
 ---
 
 ## ✅ Recent Updates (December 2025)
+
+### Knowledge Base & PDF Viewing (v1.4.0)
+- ✅ **Knowledge Base Feature** - Document library with search and admin upload portal
+- ✅ **In-app PDF Viewer** - Syncfusion PDF viewer with zoom and text selection
+- ✅ **5-Tab Navigation** - Added Knowledge Base tab with center-elevated home button
+- ✅ **Logout Button** - Quick logout from home screen with confirmation
+- ✅ **Admin Portal** - Web interface for uploading PDFs with metadata
+- ✅ **Unified PDF Viewing** - Both invoices and knowledge base use in-app viewer
+- ✅ **Database Schema** - New knowledge_base table with title, subtitle, file_url
 
 ### Registration & Onboarding (v1.3.0)
 - ✅ **Complete Profile Screen** - Unified registration for email and third-party users
@@ -469,5 +498,5 @@ Proprietary - E-Document Solutions (EDS)
 
 ---
 
-**Last Updated:** December 18, 2025  
-**Version:** 1.3.0 - Complete Profile & S3 Presigned URLs
+**Last Updated:** December 24, 2025  
+**Version:** 1.4.0 - Knowledge Base & PDF Viewer

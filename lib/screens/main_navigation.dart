@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'promotions_screen.dart';
 import 'invoices_screen.dart';
 import 'profile_screen.dart';
-import 'dashboard_screen.dart';
+import 'knowledge_base_screen.dart';
 import 'home_screen.dart';
 
 class MainNavigation extends StatefulWidget {
@@ -20,7 +20,7 @@ class _MainNavigationState extends State<MainNavigation> {
     const PromotionsScreen(),
     const InvoicesScreen(),
     const HomeScreen(), // Center - Home
-    const DashboardScreen(), // Dashboard (analytics/stats)
+    const KnowledgeBaseScreen(), // Knowledge Base
     const ProfileScreen(),
   ];
 
@@ -81,7 +81,7 @@ class _MainNavigationState extends State<MainNavigation> {
               _buildNavItem(0, Icons.campaign, 'Promotions'),
               _buildNavItem(1, Icons.receipt_long, 'Invoices'),
               const SizedBox(width: 64), // Space for center button
-              _buildNavItem(3, Icons.bar_chart_rounded, 'Dashboard'),
+              _buildNavItem(3, Icons.menu_book, 'Knowledge'),
               _buildNavItem(4, Icons.person, 'Profile'),
             ],
           ),

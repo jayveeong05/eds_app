@@ -51,6 +51,11 @@
                             <i class="bi bi-receipt-cutoff"></i> Invoices
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo ($currentPage == 'knowledge_base') ? 'active' : ''; ?>" href="knowledge_base.php">
+                            <i class="bi bi-book"></i> Knowledge Base
+                        </a>
+                    </li>
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">
