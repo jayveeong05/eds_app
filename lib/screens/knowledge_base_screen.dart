@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'pdf_viewer_screen.dart';
+import 'knowledge_base_chat_screen.dart';
 
 class KnowledgeBaseScreen extends StatefulWidget {
   const KnowledgeBaseScreen({super.key});
@@ -134,8 +135,10 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF0EEE9),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,10 +149,7 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Knowledge Base',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
+                  Text('Knowledge Base', style: theme.textTheme.headlineMedium),
                   const SizedBox(height: 16),
                   // Search bar
                   Container(
@@ -169,9 +169,12 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                       onChanged: _filterDocuments,
                       decoration: InputDecoration(
                         hintText: 'Search documents...',
-                        prefixIcon: const Icon(
+                        hintStyle: TextStyle(
+                          color: theme.colorScheme.onSurface.withOpacity(0.5),
+                        ),
+                        prefixIcon: Icon(
                           Icons.search,
-                          color: Color(0xFFA39382),
+                          color: theme.colorScheme.onSurface.withOpacity(0.4),
                         ),
                         suffixIcon: _searchQuery.isNotEmpty
                             ? IconButton(
@@ -202,9 +205,9 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
             // Document List
             Expanded(
               child: _isLoading
-                  ? const Center(
+                  ? Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFF2C3E50),
+                        color: theme.colorScheme.primary,
                       ),
                     )
                   : _filteredDocuments.isEmpty
@@ -234,7 +237,7 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                     )
                   : RefreshIndicator(
                       onRefresh: _fetchDocuments,
-                      color: const Color(0xFF2C3E50),
+                      color: theme.colorScheme.primary,
                       child: ListView.builder(
                         padding: const EdgeInsets.only(
                           left: 24,
@@ -266,23 +269,21 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                                 width: 48,
                                 height: 48,
                                 decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFF8A9A5B,
-                                  ).withOpacity(0.1),
+                                  color: theme.colorScheme.secondary
+                                      .withOpacity(0.1),
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.picture_as_pdf,
-                                  color: Color(0xFF8A9A5B),
+                                  color: theme.colorScheme.secondary,
                                   size: 24,
                                 ),
                               ),
                               title: Text(
                                 doc['title'] ?? 'Untitled',
-                                style: const TextStyle(
+                                style: theme.textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                  color: Color(0xFF1E293B),
+                                  color: theme.colorScheme.onSurface,
                                 ),
                               ),
                               subtitle: Column(
@@ -294,10 +295,11 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                                       padding: const EdgeInsets.only(top: 4),
                                       child: Text(
                                         doc['subtitle'],
-                                        style: const TextStyle(
-                                          fontSize: 13,
-                                          color: Color(0xFF64748B),
-                                        ),
+                                        style: theme.textTheme.bodySmall
+                                            ?.copyWith(
+                                              color: theme.colorScheme.onSurface
+                                                  .withOpacity(0.6),
+                                            ),
                                         maxLines: 2,
                                         overflow: TextOverflow.ellipsis,
                                       ),
@@ -306,17 +308,20 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                                     padding: const EdgeInsets.only(top: 4),
                                     child: Text(
                                       _formatDate(doc['created_at']),
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        color: Color(0xFFA39382),
-                                      ),
+                                      style: theme.textTheme.labelSmall
+                                          ?.copyWith(
+                                            color: theme.colorScheme.onSurface
+                                                .withOpacity(0.4),
+                                          ),
                                     ),
                                   ),
                                 ],
                               ),
-                              trailing: const Icon(
+                              trailing: Icon(
                                 Icons.chevron_right,
-                                color: Color(0xFFA39382),
+                                color: theme.colorScheme.onSurface.withOpacity(
+                                  0.3,
+                                ),
                                 size: 20,
                               ),
                               onTap: () => _openPDF(
@@ -330,6 +335,23 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                     ),
             ),
           ],
+        ),
+      ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 80), // Lift above nav bar
+        child: FloatingActionButton.extended(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const KnowledgeBaseChatScreen(),
+              ),
+            );
+          },
+          icon: const Icon(Icons.bubble_chart),
+          label: const Text('Ask AI'),
+          backgroundColor: theme.colorScheme.secondary, // EDS Red
+          foregroundColor: Colors.white,
         ),
       ),
     );

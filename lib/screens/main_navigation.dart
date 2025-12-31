@@ -33,7 +33,7 @@ class _MainNavigationState extends State<MainNavigation> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0EEE9),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: Stack(
         children: [
           // Main content
@@ -51,6 +51,7 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   Widget _buildModernBottomNav() {
+    final theme = Theme.of(context);
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.bottomCenter,
@@ -60,7 +61,7 @@ class _MainNavigationState extends State<MainNavigation> {
           margin: const EdgeInsets.symmetric(horizontal: 20),
           padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
           decoration: BoxDecoration(
-            color: const Color(0xFFFFFFFF),
+            color: theme.colorScheme.surface,
             borderRadius: BorderRadius.circular(30),
             boxShadow: [
               BoxShadow(
@@ -97,17 +98,17 @@ class _MainNavigationState extends State<MainNavigation> {
               height: 64,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: const LinearGradient(
+                gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFF8A9A5B), // Soft Sage
-                    Color(0xFF7A8A4B),
+                    theme.colorScheme.secondary,
+                    theme.colorScheme.secondary.withOpacity(0.8),
                   ],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF8A9A5B).withOpacity(0.4),
+                    color: theme.colorScheme.secondary.withOpacity(0.4),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   ),
@@ -127,7 +128,9 @@ class _MainNavigationState extends State<MainNavigation> {
 
   Widget _buildNavItem(int index, IconData icon, String label) {
     final isSelected = _selectedIndex == index;
-    const primaryColor = Color(0xFF2C3E50); // Deep Slate
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    final inactiveColor = theme.colorScheme.onSurface.withOpacity(0.5);
 
     return Expanded(
       child: GestureDetector(
@@ -156,7 +159,7 @@ class _MainNavigationState extends State<MainNavigation> {
                 ),
                 child: Icon(
                   icon,
-                  color: isSelected ? primaryColor : const Color(0xFFA39382),
+                  color: isSelected ? primaryColor : inactiveColor,
                   size: 22,
                 ),
               ),
@@ -166,7 +169,7 @@ class _MainNavigationState extends State<MainNavigation> {
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
                 style: TextStyle(
-                  color: isSelected ? primaryColor : const Color(0xFFA39382),
+                  color: isSelected ? primaryColor : inactiveColor,
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),

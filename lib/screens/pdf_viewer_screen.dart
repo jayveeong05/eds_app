@@ -11,8 +11,12 @@ class PdfViewerScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(title, style: const TextStyle(fontSize: 16)),
-        backgroundColor: const Color(0xFF2C3E50),
+        title: Text(
+          title,
+          style: const TextStyle(fontSize: 16, color: Colors.white),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        iconTheme: const IconThemeData(color: Colors.white),
         foregroundColor: Colors.white,
         elevation: 0,
       ),

@@ -89,8 +89,12 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+    final errorColor = theme.colorScheme.error;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF0EEE9), // Cloud Dancer background
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,20 +108,20 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
                     icon: const Icon(Icons.arrow_back),
                     onPressed: () => Navigator.pop(context),
                     tooltip: 'Back',
-                    color: const Color(0xFF1A73E8), // Electric Blue
+                    color: primaryColor,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       widget.machineCode,
-                      style: Theme.of(context).textTheme.headlineMedium,
+                      style: theme.textTheme.headlineMedium,
                     ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.refresh),
                     onPressed: _fetchInvoices,
                     tooltip: 'Refresh',
-                    color: const Color(0xFF1A73E8), // Electric Blue
+                    color: primaryColor,
                   ),
                 ],
               ),
@@ -126,10 +130,8 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
             // Body
             Expanded(
               child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF1A73E8), // Electric Blue
-                      ),
+                  ? Center(
+                      child: CircularProgressIndicator(color: primaryColor),
                     )
                   : _errorMessage.isNotEmpty
                   ? Center(
@@ -138,24 +140,22 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.error_outline,
                               size: 64,
-                              color: Color(0xFFE53935),
+                              color: errorColor,
                             ),
                             const SizedBox(height: 16),
                             Text(
                               _errorMessage,
-                              style: const TextStyle(color: Color(0xFFE53935)),
+                              style: TextStyle(color: errorColor),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: _fetchInvoices,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(
-                                  0xFF1A73E8,
-                                ), // Electric Blue
+                                backgroundColor: primaryColor,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 24,
@@ -176,14 +176,16 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
                           Icon(
                             Icons.inbox_outlined,
                             size: 64,
-                            color: Colors.grey[400],
+                            color: theme.colorScheme.onSurface.withOpacity(0.4),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'No invoices found for ${widget.machineCode}',
                             style: TextStyle(
                               fontSize: 18,
-                              color: Colors.grey[600],
+                              color: theme.colorScheme.onSurface.withOpacity(
+                                0.6,
+                              ),
                             ),
                             textAlign: TextAlign.center,
                           ),
@@ -192,7 +194,7 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
                     )
                   : RefreshIndicator(
                       onRefresh: _fetchInvoices,
-                      color: const Color(0xFF1A73E8), // Electric Blue
+                      color: primaryColor,
                       child: ListView.builder(
                         padding: const EdgeInsets.only(
                           left: 24,
@@ -225,14 +227,12 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
                                 width: 48,
                                 height: 48,
                                 decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFFE53935,
-                                  ).withOpacity(0.1), // Red light
+                                  color: errorColor.withOpacity(0.1),
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(
-                                  Icons.picture_as_pdf,
-                                  color: Color(0xFFE53935), // Red for PDF
+                                child: Icon(
+                                  Icons.receipt_long,
+                                  color: primaryColor,
                                 ),
                               ),
                               title: Text(
@@ -247,9 +247,9 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
                                 style: const TextStyle(fontSize: 12),
                               ),
                               trailing: IconButton(
-                                icon: const Icon(
+                                icon: Icon(
                                   Icons.open_in_new,
-                                  color: Color(0xFF1A73E8), // Electric Blue
+                                  color: primaryColor,
                                 ),
                                 onPressed: () => _openPdf(
                                   invoice['pdf_url'],

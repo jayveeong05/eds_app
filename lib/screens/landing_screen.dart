@@ -6,8 +6,13 @@ class LandingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // final primaryColor = theme.colorScheme.primary;
+    final secondaryColor = theme.colorScheme.secondary;
+    final onSurface = theme.colorScheme.onSurface;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF0EEE9), // Cloud Dancer
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
@@ -20,15 +25,13 @@ class LandingScreen extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: const Color(
-                        0xFF8A9A5B,
-                      ).withOpacity(0.1), // Soft Sage
+                      color: secondaryColor.withOpacity(0.1), // EDS Red tint
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.description_rounded,
                       size: 48,
-                      color: Color(0xFF8A9A5B), // Soft Sage
+                      color: secondaryColor, // EDS Red
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -37,7 +40,7 @@ class LandingScreen extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 32,
                       fontWeight: FontWeight.w800,
-                      color: const Color(0xFF1E293B),
+                      color: onSurface,
                       letterSpacing: -1.0,
                       height: 1.0,
                     ),
@@ -69,17 +72,13 @@ class LandingScreen extends StatelessWidget {
                       height: 200,
                       width: 200,
                       decoration: BoxDecoration(
-                        color: const Color(
-                          0xFF8A9A5B,
-                        ).withOpacity(0.05), // Soft Sage
+                        color: secondaryColor.withOpacity(0.05),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(
                         Icons.folder_copy_rounded,
                         size: 100,
-                        color: const Color(
-                          0xFF8A9A5B,
-                        ).withOpacity(0.3), // Soft Sage
+                        color: secondaryColor.withOpacity(0.3),
                       ),
                     );
                   },
@@ -94,7 +93,7 @@ class LandingScreen extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B),
+                      color: onSurface.withOpacity(0.6),
                       letterSpacing: 0.5,
                     ),
                     textAlign: TextAlign.center,
@@ -104,13 +103,13 @@ class LandingScreen extends StatelessWidget {
                     'Manage your documents effortlessly',
                     style: GoogleFonts.inter(
                       fontSize: 14,
-                      color: const Color(0xFF94A3B8),
+                      color: onSurface.withOpacity(0.4),
                     ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 48),
 
-                  // Login Button - High-Gloss Electric Blue
+                  // Login Button
                   SizedBox(
                     width: double.infinity,
                     height: 56,
@@ -119,11 +118,9 @@ class LandingScreen extends StatelessWidget {
                         Navigator.pushNamed(context, '/login');
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF8A9A5B), // Soft Sage
+                        backgroundColor: secondaryColor, // EDS Red
                         foregroundColor: Colors.white,
-                        shadowColor: const Color(
-                          0xFF8A9A5B,
-                        ).withOpacity(0.3), // Soft Sage
+                        shadowColor: secondaryColor.withOpacity(0.3),
                         elevation: 8,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(32.0),
@@ -141,7 +138,7 @@ class LandingScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
 
-                  // Sign Up Button - Minimalist Ghost Style
+                  // Sign Up Button
                   SizedBox(
                     width: double.infinity,
                     height: 56,
@@ -154,7 +151,7 @@ class LandingScreen extends StatelessWidget {
                         );
                       },
                       style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFF64748B),
+                        foregroundColor: onSurface.withOpacity(0.6),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),

@@ -36,10 +36,29 @@ try {
     
     // Upload to S3
     $s3 = new SimpleS3(AWS_ACCESS_KEY, AWS_SECRET_KEY, AWS_REGION);
-    $s3Key = 'knowledge_base/' . uniqid() . '_' . $file['name'];
+    
+    // Sanitize filename: replace spaces and special chars with underscores
+    $sanitizedFilename = preg_replace('/[^a-zA-Z0-9._-]/', '_', $file['name']);
+    $s3Key = 'knowledge_base/' . uniqid() . '_' . $sanitizedFilename;
+    
+    // Debug: Log file info
+    error_log("Upload attempt - File: " . $file['name'] . ", Size: " . $file['size'] . ", Tmp: " . $file['tmp_name']);
+    error_log("S3 Key: " . $s3Key . ", Bucket: " . AWS_BUCKET . ", Region: " . AWS_REGION);
+    
+    // Verify uploaded file exists
+    if (!file_exists($file['tmp_name'])) {
+        throw new Exception('Uploaded file not found at: ' . $file['tmp_name']);
+    }
+    
+    if (filesize($file['tmp_name']) == 0) {
+        throw new Exception('Uploaded file is empty');
+    }
+    
     $uploadResult = $s3->putObject($file['tmp_name'], AWS_BUCKET, $s3Key);
     
     if ($uploadResult !== true) {
+        // Log detailed error for debugging
+        error_log("S3 Upload failed: " . print_r($uploadResult, true));
         throw new Exception('Failed to upload file to S3: ' . $uploadResult);
     }
     

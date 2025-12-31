@@ -70,8 +70,11 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final primaryColor = theme.colorScheme.primary;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF0EEE9), // Cloud Dancer background
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,15 +85,12 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Invoices',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
+                  Text('Invoices', style: theme.textTheme.headlineMedium),
                   IconButton(
                     icon: const Icon(Icons.refresh),
                     onPressed: _fetchMachineCodes,
                     tooltip: 'Refresh',
-                    color: const Color(0xFF2C3E50), // Deep Slate
+                    color: primaryColor,
                   ),
                 ],
               ),
@@ -99,10 +99,8 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
             // Body
             Expanded(
               child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF2C3E50), // Deep Slate
-                      ),
+                  ? Center(
+                      child: CircularProgressIndicator(color: primaryColor),
                     )
                   : _errorMessage.isNotEmpty
                   ? Center(
@@ -111,24 +109,22 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(
+                            Icon(
                               Icons.error_outline,
                               size: 64,
-                              color: Color(0xFFE53935),
+                              color: theme.colorScheme.error,
                             ),
                             const SizedBox(height: 16),
                             Text(
                               _errorMessage,
-                              style: const TextStyle(color: Color(0xFFE53935)),
+                              style: TextStyle(color: theme.colorScheme.error),
                               textAlign: TextAlign.center,
                             ),
                             const SizedBox(height: 16),
                             ElevatedButton(
                               onPressed: _fetchMachineCodes,
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(
-                                  0xFF2C3E50, // Deep Slate
-                                ), // Electric Blue
+                                backgroundColor: primaryColor,
                                 foregroundColor: Colors.white,
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 24,
@@ -149,14 +145,16 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                           Icon(
                             Icons.inbox_outlined,
                             size: 64,
-                            color: Colors.grey[400],
+                            color: theme.colorScheme.onSurface.withOpacity(0.4),
                           ),
                           const SizedBox(height: 16),
                           Text(
                             'No invoices available',
                             style: TextStyle(
                               fontSize: 18,
-                              color: Colors.grey[600],
+                              color: theme.colorScheme.onSurface.withOpacity(
+                                0.6,
+                              ),
                             ),
                           ),
                         ],
@@ -164,7 +162,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                     )
                   : RefreshIndicator(
                       onRefresh: _fetchMachineCodes,
-                      color: const Color(0xFF2C3E50), // Deep Slate
+                      color: primaryColor,
                       child: ListView.builder(
                         padding: const EdgeInsets.only(
                           left: 24,
@@ -202,24 +200,20 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                 width: 48,
                                 height: 48,
                                 decoration: BoxDecoration(
-                                  color: const Color(
-                                    0xFF2C3E50, // Deep Slate
-                                  ).withOpacity(0.1), // Electric Blue light
+                                  color: primaryColor.withOpacity(0.1),
                                   shape: BoxShape.circle,
                                 ),
-                                child: const Icon(
-                                  Icons.receipt_long,
-                                  color: Color(0xFF2C3E50), // Deep Slate
+                                child: Icon(
+                                  Icons.precision_manufacturing,
+                                  color: primaryColor,
                                 ),
                               ),
                               title: Text(
                                 code,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.w700, // Bold
                                   fontSize: 18, // 18pt
-                                  color: Color(
-                                    0xFF1E293B,
-                                  ), // Navy (Deep Charcoal)
+                                  color: theme.colorScheme.onSurface,
                                   letterSpacing: -0.3,
                                 ),
                               ),
@@ -227,14 +221,13 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                 'Tap to view invoices',
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: const Color(
-                                    0xFF64748B,
-                                  ), // Muted Slate Grey
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.6),
                                 ),
                               ),
-                              trailing: const Icon(
+                              trailing: Icon(
                                 Icons.chevron_right,
-                                color: Color(0xFF2C3E50), // Deep Slate
+                                color: primaryColor,
                               ),
                               onTap: () => _navigateToCodeDetail(code),
                             ),

@@ -47,10 +47,13 @@ app.*.map.json
 # Backend configuration (AWS credentials, database passwords)
 backend/config/s3_config.php
 backend/.env
-backend/config/database.php 
+backend/config/database.php
+backend/config/ai_config.php
 
 # Firebase configuration
 google-services.json
 GoogleService-Info.plist
 ios/Runner/GoogleService-Info.plist
 android/app/google-services.json
+backend/lib/google_keys.json
+

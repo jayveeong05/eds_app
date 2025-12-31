@@ -116,7 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Text(
               'OK',
               style: GoogleFonts.inter(
-                color: const Color(0xFF2C3E50), // Deep Slate
+                color: Theme.of(context).colorScheme.primary, // Deep Slate
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -255,9 +255,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 onChanged: (value) {
                                   setState(() => _rememberMe = value ?? false);
                                 },
-                                activeColor: const Color(
-                                  0xFF8A9A5B,
-                                ), // Soft Sage
+                                activeColor: Theme.of(
+                                  context,
+                                ).colorScheme.primary, // Royal Blue
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(4),
                                 ),
@@ -284,7 +284,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             'Forgot password?',
                             style: GoogleFonts.inter(
                               fontSize: 14,
-                              color: const Color(0xFF2C3E50), // Deep Slate
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.primary, // Deep Slate
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -348,7 +350,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                 );
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF8A9A5B), // Soft Sage
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.secondary, // Soft Sage
                           foregroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
@@ -468,7 +472,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               'Sign up',
                               style: GoogleFonts.inter(
                                 fontSize: 14,
-                                color: const Color(0xFF2C3E50), // Deep Slate
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary, // Deep Slate
                                 fontWeight: FontWeight.w600,
                               ),
                             ),

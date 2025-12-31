@@ -3,6 +3,9 @@
 DROP TABLE IF EXISTS invoices;
 DROP TABLE IF EXISTS promotions;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS chat_messages;
+DROP TABLE IF EXISTS admin_activity_log;
+DROP TABLE IF EXISTS knowledge_base;
 
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -46,6 +49,16 @@ CREATE TABLE IF NOT EXISTS knowledge_base (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Chat Messages Table
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id),
+  message_text TEXT NOT NULL,
+  is_user_message BOOLEAN DEFAULT true,
+  is_favorite BOOLEAN DEFAULT false,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Admin Activity Log Table
 -- Tracks admin actions for audit and monitoring purposes
 CREATE TABLE IF NOT EXISTS admin_activity_log (
@@ -66,3 +79,5 @@ CREATE INDEX IF NOT EXISTS idx_knowledge_base_title ON knowledge_base(title);
 CREATE INDEX IF NOT EXISTS idx_knowledge_base_created_at ON knowledge_base(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_activity_log_admin ON admin_activity_log(admin_user_id);
 CREATE INDEX IF NOT EXISTS idx_activity_log_created ON admin_activity_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chat_user_id ON chat_messages(user_id);
+CREATE INDEX IF NOT EXISTS idx_chat_created_at ON chat_messages(created_at DESC);

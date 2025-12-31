@@ -3,8 +3,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
 import 'code_detail_screen.dart';
-import '../services/auth_service.dart';
-import 'landing_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -132,66 +130,36 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Future<void> _handleLogout() async {
-    // Show confirmation dialog
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldLogout == true && mounted) {
-      // Perform logout
-      await AuthService().logout();
-
-      // Navigate to landing screen and remove all previous routes
-      if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const LandingScreen()),
-          (route) => false,
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF0EEE9),
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header with Logout Button
+            // Header with EDS Logo
             Padding(
-              padding: const EdgeInsets.all(24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Home',
-                    style: Theme.of(context).textTheme.headlineMedium,
-                  ),
-                  IconButton(
-                    onPressed: _handleLogout,
-                    icon: const Icon(Icons.logout),
-                    tooltip: 'Logout',
-                    color: const Color(0xFF2C3E50),
-                  ),
-                ],
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Center(
+                child: Image.asset(
+                  // 'assets/images/eds_logo.jpg',
+                  'assets/images/eds_logo.png',
+                  height:
+                      80, // Increased size, adjusted padding to match box size
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Text(
+                      'EDS',
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.primary,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
 
@@ -199,9 +167,9 @@ class _HomeScreenState extends State<HomeScreen> {
             SizedBox(
               height: 380,
               child: _isLoadingPromotions
-                  ? const Center(
+                  ? Center(
                       child: CircularProgressIndicator(
-                        color: Color(0xFF2C3E50),
+                        color: theme.colorScheme.primary,
                       ),
                     )
                   : _promotions.isEmpty
@@ -239,8 +207,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               height: 8,
                               decoration: BoxDecoration(
                                 color: isActive
-                                    ? const Color(0xFF8A9A5B)
-                                    : const Color(0xFFD1D5DB),
+                                    ? theme
+                                          .colorScheme
+                                          .secondary // EDS Red
+                                    : Colors.grey[300],
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             );
@@ -258,17 +228,14 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'Latest Invoices',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
+                  Text('Latest Invoices', style: theme.textTheme.titleLarge),
                   if (_isLoadingInvoices)
-                    const SizedBox(
+                    SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Color(0xFF2C3E50),
+                        color: theme.colorScheme.primary,
                       ),
                     ),
                 ],
@@ -319,33 +286,37 @@ class _HomeScreenState extends State<HomeScreen> {
                               width: 40,
                               height: 40,
                               decoration: BoxDecoration(
-                                color: const Color(0xFF2C3E50).withOpacity(0.1),
+                                color: theme.colorScheme.primary.withOpacity(
+                                  0.1,
+                                ),
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
+                              child: Icon(
                                 Icons.receipt_long,
-                                color: Color(0xFF2C3E50),
+                                color: theme.colorScheme.primary, // Royal Blue
                                 size: 20,
                               ),
                             ),
                             title: Text(
                               code,
-                              style: const TextStyle(
+                              style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                                color: Color(0xFF1E293B),
+                                color: theme.colorScheme.onSurface,
                               ),
                             ),
-                            subtitle: const Text(
+                            subtitle: Text(
                               'Tap to view',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF64748B),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurface.withOpacity(
+                                  0.6,
+                                ),
                               ),
                             ),
-                            trailing: const Icon(
+                            trailing: Icon(
                               Icons.chevron_right,
-                              color: Color(0xFFA39382),
+                              color: theme.colorScheme.onSurface.withOpacity(
+                                0.4,
+                              ),
                               size: 20,
                             ),
                             onTap: () => _navigateToCodeDetail(code),
@@ -405,7 +376,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // Gradient Overlay
             Positioned.fill(
               child: Container(
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.bottomCenter,
                     end: Alignment.topCenter,

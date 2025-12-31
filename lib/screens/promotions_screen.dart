@@ -88,14 +88,16 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF0EEE9), // Cloud Dancer background
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: _isLoading
-            ? const Center(
+            ? Center(
                 child: CircularProgressIndicator(
-                  color: Color(0xFF2C3E50),
-                ), // Deep Slate
+                  color: theme.colorScheme.primary,
+                ),
               )
             : _errorMessage.isNotEmpty
             ? Center(
@@ -110,7 +112,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                     ElevatedButton(
                       onPressed: _fetchPromotions,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2C3E50), // Deep Slate
+                        backgroundColor: theme.colorScheme.primary,
                         foregroundColor: Colors.white,
                       ),
                       child: const Text('Retry'),
@@ -132,21 +134,19 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                       children: [
                         Text(
                           'Promotions',
-                          style: Theme.of(context).textTheme.headlineMedium,
+                          style: theme.textTheme.headlineMedium,
                         ),
                         // Refresh button
                         Container(
                           decoration: BoxDecoration(
-                            color: const Color(
-                              0xFF2C3E50,
-                            ).withOpacity(0.1), // Deep Slate
+                            color: theme.colorScheme.primary.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: IconButton(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.refresh,
                               size: 20,
-                              color: Color(0xFF2C3E50), // Deep Slate
+                              color: theme.colorScheme.primary,
                             ),
                             padding: const EdgeInsets.all(8),
                             constraints: const BoxConstraints(),
@@ -200,9 +200,11 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                             ],
                           ),
                           child: IconButton(
-                            icon: const Icon(
+                            icon: Icon(
                               Icons.arrow_back_ios_new,
-                              color: Color(0xFFA39382), // Warm Taupe
+                              color: theme.colorScheme.onSurface.withOpacity(
+                                0.4,
+                              ),
                               size: 20,
                             ),
                             onPressed: () {
@@ -228,8 +230,10 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                               height: 8,
                               decoration: BoxDecoration(
                                 color: isActive
-                                    ? const Color(0xFF8A9A5B) // Soft Sage
-                                    : const Color(0xFFD1D5DB),
+                                    ? theme
+                                          .colorScheme
+                                          .secondary // EDS Red
+                                    : Colors.grey[300],
                                 borderRadius: BorderRadius.circular(4),
                               ),
                             );
@@ -240,13 +244,13 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                         // Right Arrow
                         Container(
                           decoration: BoxDecoration(
-                            color: const Color(0xFF8A9A5B), // Soft Sage
+                            color: theme.colorScheme.secondary, // EDS Red
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(
-                                  0xFF8A9A5B,
-                                ).withOpacity(0.3), // Soft Sage
+                                color: theme.colorScheme.secondary.withOpacity(
+                                  0.3,
+                                ),
                                 blurRadius: 16,
                                 offset: const Offset(0, 6),
                               ),
@@ -278,6 +282,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
   }
 
   Widget _buildPromotionCard(dynamic promo) {
+    final theme = Theme.of(context);
     final user = promo['user'] ?? {};
     final email = user['email'] ?? 'Unknown User';
     final profileImageUrl = user['profile_image_url'];
@@ -328,7 +333,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                     // Gradient Overlay (bottom to transparent)
                     Positioned.fill(
                       child: Container(
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           gradient: LinearGradient(
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
@@ -411,7 +416,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                         promo['title']?.isEmpty ?? true
                             ? 'Untitled Post'
                             : promo['title'],
-                        style: Theme.of(context).textTheme.headlineSmall,
+                        style: theme.textTheme.headlineSmall,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -421,7 +426,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                       Expanded(
                         child: Text(
                           promo['description'] ?? '',
-                          style: Theme.of(context).textTheme.bodyMedium,
+                          style: theme.textTheme.bodyMedium,
                           maxLines: 4,
                           overflow: TextOverflow.ellipsis,
                         ),
