@@ -269,13 +269,14 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                                 width: 48,
                                 height: 48,
                                 decoration: BoxDecoration(
-                                  color: theme.colorScheme.secondary
-                                      .withOpacity(0.1),
+                                  color: theme.colorScheme.primary.withOpacity(
+                                    0.1,
+                                  ),
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
                                   Icons.picture_as_pdf,
-                                  color: theme.colorScheme.secondary,
+                                  color: theme.colorScheme.primary,
                                   size: 24,
                                 ),
                               ),
@@ -350,7 +351,7 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
           },
           icon: const Icon(Icons.bubble_chart),
           label: const Text('Ask AI'),
-          backgroundColor: theme.colorScheme.secondary, // EDS Red
+          backgroundColor: theme.colorScheme.primary, // EDS Blue
           foregroundColor: Colors.white,
         ),
       ),

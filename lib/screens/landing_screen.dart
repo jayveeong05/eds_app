@@ -7,109 +7,27 @@ class LandingScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // final primaryColor = theme.colorScheme.primary;
-    final secondaryColor = theme.colorScheme.secondary;
-    final onSurface = theme.colorScheme.onSurface;
-
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 48),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo/Branding - Geometric sans-serif
+              const Spacer(),
+              // Big EDS Logo
+              Image.asset(
+                'assets/images/eds_logo.png', // Using the official logo asset
+                height: 180, // Big size
+                fit: BoxFit.contain,
+              ),
+              const Spacer(),
+
+              // Buttons
               Column(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: secondaryColor.withOpacity(0.1), // EDS Red tint
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Icon(
-                      Icons.description_rounded,
-                      size: 48,
-                      color: secondaryColor, // EDS Red
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'EDS APP',
-                    style: GoogleFonts.inter(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w800,
-                      color: onSurface,
-                      letterSpacing: -1.0,
-                      height: 1.0,
-                    ),
-                  ),
-                ],
-              ),
-
-              // Floating Illustration Card
-              Container(
-                padding: const EdgeInsets.all(40),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 32,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Image.asset(
-                  'assets/auth_illustration.png',
-                  height: 240,
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    // Fallback to icon if image fails to load
-                    return Container(
-                      height: 200,
-                      width: 200,
-                      decoration: BoxDecoration(
-                        color: secondaryColor.withOpacity(0.05),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.folder_copy_rounded,
-                        size: 100,
-                        color: secondaryColor.withOpacity(0.3),
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              // Tagline and Buttons
-              Column(
-                children: [
-                  Text(
-                    'E-Document Solutions',
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: onSurface.withOpacity(0.6),
-                      letterSpacing: 0.5,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Manage your documents effortlessly',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: onSurface.withOpacity(0.4),
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 48),
-
-                  // Login Button
+                  // Login Button (Primary Color - Blue)
                   SizedBox(
                     width: double.infinity,
                     height: 56,
@@ -118,10 +36,9 @@ class LandingScreen extends StatelessWidget {
                         Navigator.pushNamed(context, '/login');
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: secondaryColor, // EDS Red
+                        backgroundColor: theme.colorScheme.primary, // EDS Blue
                         foregroundColor: Colors.white,
-                        shadowColor: secondaryColor.withOpacity(0.3),
-                        elevation: 8,
+                        elevation: 4,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(32.0),
                         ),
@@ -129,38 +46,40 @@ class LandingScreen extends StatelessWidget {
                       child: Text(
                         'Login',
                         style: GoogleFonts.inter(
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
-                  // Sign Up Button
+                  // Sign Up Button (Secondary Color - Red)
                   SizedBox(
                     width: double.infinity,
                     height: 56,
-                    child: TextButton(
+                    child: ElevatedButton(
                       onPressed: () {
                         Navigator.pushNamed(
                           context,
-                          '/complete-profile',
+                          '/register',
                           arguments: {'signInMethod': 'email'},
                         );
                       },
-                      style: TextButton.styleFrom(
-                        foregroundColor: onSurface.withOpacity(0.6),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: theme.colorScheme.secondary, // EDS Red
+                        foregroundColor: Colors.white,
+                        elevation: 4,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(32.0),
                         ),
                       ),
                       child: Text(
                         'Sign up',
                         style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -168,6 +87,7 @@ class LandingScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 32),
             ],
           ),
         ),

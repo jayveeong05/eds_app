@@ -232,7 +232,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                                 color: isActive
                                     ? theme
                                           .colorScheme
-                                          .secondary // EDS Red
+                                          .primary // EDS Blue
                                     : Colors.grey[300],
                                 borderRadius: BorderRadius.circular(4),
                               ),
@@ -244,11 +244,11 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                         // Right Arrow
                         Container(
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.secondary, // EDS Red
+                            color: theme.colorScheme.primary, // EDS Blue
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
-                                color: theme.colorScheme.secondary.withOpacity(
+                                color: theme.colorScheme.primary.withOpacity(
                                   0.3,
                                 ),
                                 blurRadius: 16,

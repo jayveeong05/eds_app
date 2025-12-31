@@ -42,7 +42,6 @@ $currentPage = 'promotions';
                     <div class="mb-3">
                         <label class="form-label">Promotion Image</label>
                         <input type="file" class="form-control mb-2" id="imageFile" accept="image/*" onchange="handleImageUpload(this, 'imageUrl', 'imagePreview')">
-                        <input type="hidden" id="imageUrl">
                         <div id="imagePreview" class="mt-2 d-none text-center">
                             <img src="" class="img-fluid rounded border" style="max-height: 200px">
                         </div>
@@ -86,7 +85,6 @@ $currentPage = 'promotions';
                     <div class="mb-3">
                         <label class="form-label">Promotion Image</label>
                         <input type="file" class="form-control mb-2" id="editImageFile" accept="image/*" onchange="handleImageUpload(this, 'editImageUrl', 'editImagePreview')">
-                        <input type="hidden" id="editImageUrl">
                         <div id="editImagePreview" class="mt-2 d-none text-center">
                             <img src="" class="img-fluid rounded border" style="max-height: 200px">
                         </div>
@@ -187,25 +185,33 @@ function displayPromotions(promotions) {
 
 // Add new promotion
 async function addPromotion() {
-    const imageUrl = document.getElementById('imageUrl').value.trim();
     const title = document.getElementById('title').value.trim();
     const description = document.getElementById('description').value.trim();
     
-    if (!imageUrl || !title || !description) {
-        showToast('Please upload an image and enter title and description', 'warning');
+    if (!title || !description) {
+        showToast('Please fill all required fields', 'warning');
+        return;
+    }
+    
+    if (!pendingImageFile) {
+        showToast('Please select an image', 'warning');
         return;
     }
     
     try {
+        // Upload image to S3 first
+        showToast('Uploading image...', 'info');
+        const s3Key = await uploadFile(pendingImageFile, 'promotions');
+        
+        // Then create promotion with S3 key
         const data = await apiRequest(API_BASE + '/add_promotion.php', {
-            body: { image_url: imageUrl, title: title, description: description }
+            body: { image_url: s3Key, title: title, description: description }
         });
         
         if (data.success) {
             showToast('Promotion created successfully!', 'success');
             bootstrap.Modal.getInstance(document.getElementById('addPromoModal')).hide();
             document.getElementById('addPromoForm').reset();
-            document.getElementById('imageUrl').value = '';
             resetUploadPreview('imagePreview');
             loadPromotions();
         }
@@ -214,33 +220,43 @@ async function addPromotion() {
     }
 }
 
-// Handle Image Upload
-async function handleImageUpload(fileInput, urlInputId, previewId) {
+// Storage for selected files (not uploaded yet)
+let pendingImageFile = null;
+let pendingEditImageFile = null;
+
+// Handle Image Selection (preview only, no upload)
+function handleImageUpload(fileInput, urlInputId, previewId) {
     const file = fileInput.files[0];
     if (!file) return;
 
-    try {
-        const s3Key = await uploadFile(file, 'promotions');
-        // Store the S3 key (not full URL)
-        document.getElementById(urlInputId).value = s3Key;
-        
-        // For preview, use proxy URL
-        const proxyUrl = `/api/get_image.php?path=${s3Key}`;
-        const preview = document.getElementById(previewId);
-        preview.classList.remove('d-none');
-        preview.querySelector('img').src = proxyUrl;
-        
-        showToast('Image uploaded successfully', 'success');
-    } catch (error) {
-        showToast('Upload failed: ' + error.message, 'danger');
-        fileInput.value = '';
+    // Store file for later upload
+    if (previewId === 'imagePreview') {
+        pendingImageFile = file;
+    } else if (previewId === 'editImagePreview') {
+        pendingEditImageFile = file;
     }
+
+    // Show instant local preview
+    const preview = document.getElementById(previewId);
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        preview.classList.remove('d-none');
+        preview.querySelector('img').src = e.target.result;
+    };
+    reader.readAsDataURL(file);
 }
 
 function resetUploadPreview(previewId) {
     const preview = document.getElementById(previewId);
     preview.classList.add('d-none');
     preview.querySelector('img').src = '';
+    
+    // Clear pending file
+    if (previewId === 'imagePreview') {
+        pendingImageFile = null;
+    } else if (previewId === 'editImagePreview') {
+        pendingEditImageFile = null;
+    }
 }
 
 // Open edit modal
@@ -249,10 +265,12 @@ function openEditModal(promoId) {
     if (!promo) return;
     
     document.getElementById('editPromoId').value = promo.id;
-    // Don't set editImageUrl - it will be set only when user uploads new image
-    document.getElementById('editImageUrl').value = '';
     document.getElementById('editTitle').value = promo.title || '';
     document.getElementById('editDescription').value = promo.description;
+    
+    // Clear pending edit file
+    pendingEditImageFile = null;
+    document.getElementById('editImageFile').value = '';
     
     // Show current image preview using presigned URL
     const imageUrl = promo.image_url;
@@ -267,7 +285,6 @@ function openEditModal(promoId) {
 // Update promotion
 async function updatePromotion() {
     const promoId = document.getElementById('editPromoId').value;
-    const imageUrl = document.getElementById('editImageUrl').value.trim();
     const title = document.getElementById('editTitle').value.trim();
     const description = document.getElementById('editDescription').value.trim();
     
@@ -276,13 +293,16 @@ async function updatePromotion() {
         return;
     }
     
-    const requestBody = { promotionId: promoId, title: title, description: description };
-    // Only include image_url if a new image was uploaded (editImageUrl will be empty or S3 key)
-    if (imageUrl && !imageUrl.startsWith('http')) {
-        requestBody.image_url = imageUrl;
-    }
-    
     try {
+        const requestBody = { promotionId: promoId, title: title, description: description };
+        
+        // If a new image was selected, upload it to S3 first
+        if (pendingEditImageFile) {
+            showToast('Uploading new image...', 'info');
+            const s3Key = await uploadFile(pendingEditImageFile, 'promotions');
+            requestBody.image_url = s3Key;
+        }
+        
         const data = await apiRequest(ADMIN_API_BASE + '/update_promotion.php', {
             body: requestBody
         });

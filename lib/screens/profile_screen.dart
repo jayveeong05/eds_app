@@ -382,7 +382,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
-    final secondaryColor = theme.colorScheme.secondary;
     final onSurface = theme.colorScheme.onSurface;
 
     return Scaffold(
@@ -494,7 +493,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         child: Icon(
                                           Icons.person,
                                           size: 50,
-                                          color: secondaryColor,
+                                          color: primaryColor,
                                         ),
                                       ),
                                     ),
@@ -522,7 +521,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: secondaryColor, // EDS Red
+                                      color: primaryColor, // EDS Blue
                                       shape: BoxShape.circle,
                                       border: Border.all(
                                         color: Colors.white,
@@ -677,7 +676,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             _isEditingName
                                                 ? Icons.check
                                                 : Icons.edit,
-                                            color: secondaryColor,
+                                            color: primaryColor,
                                             size: 18,
                                           ),
                                         ),
@@ -1105,9 +1104,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ),
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: theme.colorScheme.error,
+                                foregroundColor: theme.colorScheme.secondary,
                                 side: BorderSide(
-                                  color: theme.colorScheme.error,
+                                  color: theme.colorScheme.secondary,
                                   width: 1.5,
                                 ),
                                 padding: const EdgeInsets.symmetric(

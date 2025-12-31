@@ -3,6 +3,7 @@
 DROP TABLE IF EXISTS invoices;
 DROP TABLE IF EXISTS promotions;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS chat_sessions;
 DROP TABLE IF EXISTS chat_messages;
 DROP TABLE IF EXISTS admin_activity_log;
 DROP TABLE IF EXISTS knowledge_base;
@@ -24,6 +25,18 @@ CREATE TABLE IF NOT EXISTS promotions (
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     image_url TEXT NOT NULL,
     description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- News Table
+CREATE TABLE IF NOT EXISTS news (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    short_description VARCHAR(500) NOT NULL,
+    details TEXT NOT NULL,
+    link VARCHAR(500) NOT NULL,
+    image_url TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -49,10 +62,20 @@ CREATE TABLE IF NOT EXISTS knowledge_base (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Chat Sessions Table
+CREATE TABLE IF NOT EXISTS chat_sessions (
+    id SERIAL PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) DEFAULT 'New Chat',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Chat Messages Table
 CREATE TABLE IF NOT EXISTS chat_messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id),
+  session_id INT REFERENCES chat_sessions(id) ON DELETE CASCADE,
   message_text TEXT NOT NULL,
   is_user_message BOOLEAN DEFAULT true,
   is_favorite BOOLEAN DEFAULT false,
@@ -81,3 +104,4 @@ CREATE INDEX IF NOT EXISTS idx_activity_log_admin ON admin_activity_log(admin_us
 CREATE INDEX IF NOT EXISTS idx_activity_log_created ON admin_activity_log(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_chat_user_id ON chat_messages(user_id);
 CREATE INDEX IF NOT EXISTS idx_chat_created_at ON chat_messages(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_news_created_at ON news(created_at DESC);

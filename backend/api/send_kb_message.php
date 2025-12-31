@@ -44,30 +44,41 @@ try {
     }
     
     $userId = $user['id'];
-    
+    $sessionId = $data->session_id ?? null;
+
     // 1. Save user message to database
     $userMessageText = trim($data->message);
-    $query = "INSERT INTO chat_messages (user_id, message_text, is_user_message, is_favorite) 
-              VALUES (:user_id, :message_text, true, false) 
-              RETURNING id, message_text, is_user_message, is_favorite, created_at";
+    $query = "INSERT INTO chat_messages (user_id, session_id, message_text, is_user_message, is_favorite) 
+              VALUES (:user_id, :session_id, :message_text, true, false) 
+              RETURNING id, message_text, is_user_message, is_favorite, created_at, session_id";
     
     $stmt = $db->prepare($query);
     $stmt->bindParam(':user_id', $userId);
+    $stmt->bindValue(':session_id', $sessionId, $sessionId ? PDO::PARAM_INT : PDO::PARAM_NULL);
     $stmt->bindParam(':message_text', $userMessageText);
     $stmt->execute();
     
     $userMessage = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Update session timestamp if session exists
+    if ($sessionId) {
+        $updateSession = "UPDATE chat_sessions SET updated_at = CURRENT_TIMESTAMP WHERE id = :session_id";
+        $upStmt = $db->prepare($updateSession);
+        $upStmt->bindValue(':session_id', $sessionId, PDO::PARAM_INT);
+        $upStmt->execute();
+    }
     
     // 2. Call DigitalOcean Agent API
     $aiResponse = callDigitalOceanAgent($userMessageText);
     
     // 3. Save bot response to database
-    $query = "INSERT INTO chat_messages (user_id, message_text, is_user_message, is_favorite) 
-              VALUES (:user_id, :message_text, false, false) 
-              RETURNING id, message_text, is_user_message, is_favorite, created_at";
+    $query = "INSERT INTO chat_messages (user_id, session_id, message_text, is_user_message, is_favorite) 
+              VALUES (:user_id, :session_id, :message_text, false, false) 
+              RETURNING id, message_text, is_user_message, is_favorite, created_at, session_id";
     
     $stmt = $db->prepare($query);
     $stmt->bindParam(':user_id', $userId);
+    $stmt->bindValue(':session_id', $sessionId, $sessionId ? PDO::PARAM_INT : PDO::PARAM_NULL);
     $stmt->bindParam(':message_text', $aiResponse);
     $stmt->execute();
     

@@ -113,7 +113,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            theme.colorScheme.secondary,
+                            theme.colorScheme.primary,
                           ),
                         ),
                       ),
@@ -128,9 +128,7 @@ class _ChatInputFieldState extends State<ChatInputField> {
                       ),
                       style: IconButton.styleFrom(
                         backgroundColor: _hasText
-                            ? theme
-                                  .colorScheme
-                                  .secondary // EDS Red
+                            ? theme.colorScheme.primary
                             : theme.scaffoldBackgroundColor,
                       ),
                     ),

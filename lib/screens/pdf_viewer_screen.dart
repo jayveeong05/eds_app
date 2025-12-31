@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:share_plus/share_plus.dart';
 
 class PdfViewerScreen extends StatelessWidget {
   final String pdfUrl;
@@ -19,6 +20,15 @@ class PdfViewerScreen extends StatelessWidget {
         iconTheme: const IconThemeData(color: Colors.white),
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: () {
+              Share.share(pdfUrl, subject: title);
+            },
+            tooltip: 'Share',
+          ),
+        ],
       ),
       body: SfPdfViewer.network(
         pdfUrl,

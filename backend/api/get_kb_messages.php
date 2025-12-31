@@ -47,17 +47,37 @@ try {
     // Get limit from query parameter, default to 100
     $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 100;
     $limit = max(1, min($limit, 500)); // Between 1 and 500
+
+    // Get session_id from query parameter
+    $sessionId = isset($_GET['session_id']) ? (int)$_GET['session_id'] : null;
     
-    // Get all chat messages for this user, ordered by oldest first
-    $query = "SELECT id, message_text, is_user_message, is_favorite, created_at
+    // Get all chat messages for this user/session, ordered by oldest first
+    $query = "SELECT id, message_text, is_user_message, is_favorite, created_at, session_id
               FROM chat_messages
-              WHERE user_id = :user_id
-              ORDER BY created_at ASC
-              LIMIT :limit";
+              WHERE user_id = :user_id";
+    
+    if ($sessionId) {
+        $query .= " AND session_id = :session_id";
+    } else {
+        // Option: Show orphaned messages or just recent ones if we wanted logic here
+        // For now, if no session_id, we can show NULL session messages OR just return empty?
+        // Let's assume sending without session_id means "Legacy" or "Orphaned" messages
+         $query .= " AND session_id IS NULL";
+    }
+    
+    $query .= " ORDER BY created_at ASC LIMIT :limit";
     
     $stmt = $db->prepare($query);
-    $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-    $stmt->bindParam(':limit', $limit, PDO::PARAM_INT);
+
+    
+    // Rebinding correctly
+    $stmt->bindValue(':user_id', $userId);
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    
+    if ($sessionId) {
+        $stmt->bindValue(':session_id', $sessionId, PDO::PARAM_INT);
+    }
+    
     $stmt->execute();
     
     $messages = $stmt->fetchAll(PDO::FETCH_ASSOC);

@@ -26,7 +26,7 @@ class EDSTheme {
       colorScheme: ColorScheme.fromSeed(
         seedColor: deepRoyalBlue,
         primary: deepRoyalBlue,
-        secondary: deepRoyalBlue,
+        secondary: edsRed, // Red, but only used in nav bar
         surface: white,
         // background: cloudDancer, // Deprecated, mapped to surface
         onPrimary: white,

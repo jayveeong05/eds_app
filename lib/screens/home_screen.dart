@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:intl/intl.dart';
+import '../models/news.dart';
+import '../services/news_service.dart';
 import 'code_detail_screen.dart';
+import 'news_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -12,21 +15,23 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  List<dynamic> _promotions = [];
+  List<News> _news = [];
   List<String> _machineCodes = [];
-  bool _isLoadingPromotions = true;
+  bool _isLoadingNews = true;
   bool _isLoadingInvoices = true;
   late PageController _pageController;
   int _currentPage = 0;
+  Timer? _autoScrollTimer;
+  DateTime? _lastManualInteraction;
 
   // For infinite scroll
   static const int _virtualPageCount = 10000;
-  int get _realPageCount => _promotions.length;
+  int get _realPageCount => _news.length;
 
   @override
   void initState() {
     super.initState();
-    _fetchPromotions();
+    _fetchNews();
     _fetchMachineCodes();
   }
 
@@ -36,43 +41,55 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {
       _currentPage = 0;
     });
+    _startAutoScroll();
+  }
+
+  void _startAutoScroll() {
+    _autoScrollTimer?.cancel();
+    _autoScrollTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (_news.isEmpty || !mounted) return;
+
+      // Check if user has manually interacted recently (within last 5 seconds)
+      if (_lastManualInteraction == null ||
+          DateTime.now().difference(_lastManualInteraction!) >
+              const Duration(seconds: 5)) {
+        // Auto-scroll to next page
+        if (_pageController.hasClients) {
+          _pageController.nextPage(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+          );
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
-    if (_promotions.isNotEmpty) {
+    _autoScrollTimer?.cancel();
+    if (_news.isNotEmpty) {
       _pageController.dispose();
     }
     super.dispose();
   }
 
-  Future<void> _fetchPromotions() async {
+  Future<void> _fetchNews() async {
     setState(() {
-      _isLoadingPromotions = true;
+      _isLoadingNews = true;
     });
 
     try {
-      final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/get_promotions.php'),
-      );
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          _promotions = data['data'] ?? [];
-          _isLoadingPromotions = false;
-        });
-        if (_promotions.isNotEmpty) {
-          _initializePageController();
-        }
-      } else {
-        setState(() {
-          _isLoadingPromotions = false;
-        });
+      final newsItems = await NewsService.fetchNews(limit: 20);
+      setState(() {
+        _news = newsItems;
+        _isLoadingNews = false;
+      });
+      if (_news.isNotEmpty) {
+        _initializePageController();
       }
     } catch (e) {
       setState(() {
-        _isLoadingPromotions = false;
+        _isLoadingNews = false;
       });
     }
   }
@@ -111,16 +128,6 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  String _formatDate(String? dateStr) {
-    if (dateStr == null) return '';
-    try {
-      final date = DateTime.parse(dateStr);
-      return DateFormat('MMM d, yyyy').format(date);
-    } catch (e) {
-      return dateStr;
-    }
-  }
-
   void _navigateToCodeDetail(String code) {
     Navigator.push(
       context,
@@ -137,123 +144,134 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with EDS Logo
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Center(
-                child: Image.asset(
-                  // 'assets/images/eds_logo.jpg',
-                  'assets/images/eds_logo.png',
-                  height:
-                      80, // Increased size, adjusted padding to match box size
-                  fit: BoxFit.contain,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Text(
-                      'EDS',
-                      style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
-                      ),
-                    );
-                  },
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with EDS Logo
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Center(
+                  child: Image.asset(
+                    // 'assets/images/eds_logo.jpg',
+                    'assets/images/eds_logo.png',
+                    height:
+                        80, // Increased size, adjusted padding to match box size
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Text(
+                        'EDS',
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
 
-            // Promotions Section
-            SizedBox(
-              height: 380,
-              child: _isLoadingPromotions
-                  ? Center(
-                      child: CircularProgressIndicator(
-                        color: theme.colorScheme.primary,
+              // News Section
+              SizedBox(
+                height: 380,
+                child: _isLoadingNews
+                    ? Center(
+                        child: CircularProgressIndicator(
+                          color: theme.colorScheme.primary,
+                        ),
+                      )
+                    : _news.isEmpty
+                    ? const Center(child: Text('No news available'))
+                    : Column(
+                        children: [
+                          // News Cards
+                          Expanded(
+                            child: PageView.builder(
+                              controller: _pageController,
+                              onPageChanged: (virtualIndex) {
+                                setState(() {
+                                  _lastManualInteraction = DateTime.now();
+                                  _currentPage = virtualIndex % _realPageCount;
+                                });
+                              },
+                              itemCount: _virtualPageCount,
+                              itemBuilder: (context, virtualIndex) {
+                                final realIndex = virtualIndex % _realPageCount;
+                                final newsItem = _news[realIndex];
+                                return _buildNewsCard(newsItem);
+                              },
+                            ),
+                          ),
+
+                          // Navigation dots
+                          const SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(_news.length, (index) {
+                              final isActive = index == _currentPage;
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                ),
+                                width: isActive ? 24 : 8,
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: isActive
+                                      ? theme
+                                            .colorScheme
+                                            .primary // EDS Blue
+                                      : Colors.grey[300],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              );
+                            }),
+                          ),
+                        ],
                       ),
-                    )
-                  : _promotions.isEmpty
-                  ? const Center(child: Text('No promotions available'))
-                  : Column(
-                      children: [
-                        // Promotion Cards
-                        Expanded(
-                          child: PageView.builder(
-                            controller: _pageController,
-                            onPageChanged: (virtualIndex) {
-                              setState(() {
-                                _currentPage = virtualIndex % _realPageCount;
-                              });
-                            },
-                            itemCount: _virtualPageCount,
-                            itemBuilder: (context, virtualIndex) {
-                              final realIndex = virtualIndex % _realPageCount;
-                              final promo = _promotions[realIndex];
-                              return _buildPromotionCard(promo);
-                            },
+              ),
+
+              const SizedBox(height: 24),
+
+              // Latest Invoices Section
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Latest Invoices', style: theme.textTheme.titleLarge),
+                    if (_isLoadingInvoices)
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Invoice List
+              _machineCodes.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Text(
+                          'No invoices available',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
                           ),
                         ),
-
-                        // Navigation dots
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: List.generate(_promotions.length, (index) {
-                            final isActive = index == _currentPage;
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              width: isActive ? 24 : 8,
-                              height: 8,
-                              decoration: BoxDecoration(
-                                color: isActive
-                                    ? theme
-                                          .colorScheme
-                                          .secondary // EDS Red
-                                    : Colors.grey[300],
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            );
-                          }),
-                        ),
-                      ],
-                    ),
-            ),
-
-            const SizedBox(height: 24),
-
-            // Latest Invoices Section
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Latest Invoices', style: theme.textTheme.titleLarge),
-                  if (_isLoadingInvoices)
-                    SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: theme.colorScheme.primary,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 16),
-
-            // Invoice List
-            Expanded(
-              child: _machineCodes.isEmpty
-                  ? Center(
-                      child: Text(
-                        'No invoices available',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                     )
                   : ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
                       padding: const EdgeInsets.only(
                         left: 24,
                         right: 24,
@@ -324,80 +342,86 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                       },
                     ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildPromotionCard(dynamic promo) {
-    final user = promo['user'] ?? {};
-    final email = user['email'] ?? 'Unknown User';
-    final profileImageUrl = user['profile_image_url'];
-    final date = _formatDate(promo['created_at']);
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+  Widget _buildNewsCard(News newsItem) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _lastManualInteraction = DateTime.now();
+        });
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => NewsDetailScreen(news: newsItem),
           ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Stack(
-          children: [
-            // Background Image
-            Image.network(
-              promo['image_url'],
-              width: double.infinity,
-              height: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: Colors.grey[300],
-                  child: Center(
-                    child: Icon(
-                      Icons.broken_image,
-                      size: 48,
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                );
-              },
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 24),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
             ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            children: [
+              // Background Image
+              Image.network(
+                newsItem.imageUrl,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    color: Colors.grey[300],
+                    child: Center(
+                      child: Icon(
+                        Icons.broken_image,
+                        size: 48,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  );
+                },
+              ),
 
-            // Gradient Overlay
-            Positioned.fill(
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.topCenter,
-                    colors: [Colors.black54, Colors.transparent],
+              // Gradient Overlay
+              Positioned.fill(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [Colors.black54, Colors.transparent],
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            // Content
-            Positioned(
-              left: 20,
-              right: 20,
-              bottom: 20,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Title
-                  if (promo['title'] != null && promo['title'].isNotEmpty)
+              // Content
+              Positioned(
+                left: 20,
+                right: 20,
+                bottom: 20,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Title
                     Text(
-                      promo['title'],
+                      newsItem.title,
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
@@ -406,61 +430,24 @@ class _HomeScreenState extends State<HomeScreen> {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  const SizedBox(height: 8),
+                    const SizedBox(height: 8),
 
-                  // Author info
-                  Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: Colors.white.withOpacity(0.3),
-                        backgroundImage:
-                            profileImageUrl != null &&
-                                profileImageUrl.toString().isNotEmpty
-                            ? NetworkImage(profileImageUrl)
-                            : null,
-                        child:
-                            profileImageUrl == null ||
-                                profileImageUrl.toString().isEmpty
-                            ? Text(
-                                email[0].toUpperCase(),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              )
-                            : null,
+                    // Short Description (replacing user info)
+                    Text(
+                      newsItem.shortDescription,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.white70,
+                        height: 1.4,
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              email.split('@')[0],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 13,
-                                color: Colors.white,
-                              ),
-                            ),
-                            Text(
-                              date,
-                              style: const TextStyle(
-                                color: Colors.white70,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

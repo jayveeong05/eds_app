@@ -3,7 +3,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:qr_flutter/qr_flutter.dart';
-import '../services/auth_service.dart';
 import 'profile_screen.dart';
 
 // Main navigation wrapper for inactive users
@@ -82,7 +81,10 @@ class _InactiveScreenState extends State<InactiveScreen> {
 
   Widget _buildNavItem(int index, IconData icon, String label) {
     final isSelected = _selectedIndex == index;
-    const primaryColor = Color(0xFF2C3E50); // Deep Slate
+    final primaryColor = Theme.of(context).colorScheme.secondary; // EDS Red
+    final inactiveColor = Theme.of(
+      context,
+    ).colorScheme.onSurface.withOpacity(0.5);
 
     return Expanded(
       child: GestureDetector(
@@ -111,9 +113,7 @@ class _InactiveScreenState extends State<InactiveScreen> {
                 ),
                 child: Icon(
                   icon,
-                  color: isSelected
-                      ? primaryColor
-                      : const Color(0xFFA39382), // Warm Taupe when not selected
+                  color: isSelected ? primaryColor : inactiveColor,
                   size: 22,
                 ),
               ),
@@ -123,9 +123,7 @@ class _InactiveScreenState extends State<InactiveScreen> {
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
                 style: TextStyle(
-                  color: isSelected
-                      ? primaryColor
-                      : const Color(0xFFA39382), // Warm Taupe when not selected
+                  color: isSelected ? primaryColor : inactiveColor,
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
@@ -216,172 +214,175 @@ class _InactiveHomeContentState extends State<InactiveHomeContent> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF0EEE9), // Cloud Dancer
-      appBar: AppBar(
-        title: const Text("Account Inactive"),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            color: const Color(0xFF2C3E50), // Deep Slate
-            onPressed: () async {
-              await AuthService().logout();
-              if (context.mounted) {
-                Navigator.pushReplacementNamed(context, '/landing');
-              }
-            },
-          ),
-        ],
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(
-            left: 32.0,
-            right: 32.0,
-            top: 32.0,
-            bottom: 100.0, // Extra padding for bottom nav
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Title - Bold geometric sans-serif
-              Text(
-                "Account Pending Approval",
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800, // Extra bold geometric
-                  letterSpacing: -0.5, // Tight geometric spacing
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-
-              // Subtitle
-              Text(
-                "Show this QR code to admin for approval",
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF64748B),
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 32), // Airy spacing
-              // Large Floating Card with QR Code
-              Container(
-                padding: const EdgeInsets.all(40),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(32), // Increased to 32px
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04), // 4% opacity
-                      blurRadius: 32, // 32px blur for floating effect
-                      offset: const Offset(0, 8),
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(
+              left: 32.0,
+              right: 32.0,
+              top: 32.0,
+              bottom: 100.0, // Extra padding for bottom nav
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Header with EDS Logo
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Center(
+                    child: Image.asset(
+                      'assets/images/eds_logo.png',
+                      height: 80,
+                      fit: BoxFit.contain,
                     ),
-                  ],
+                  ),
                 ),
-                child: Column(
-                  children: [
-                    // QR Code (removed pending icon)
-                    if (_userId != null)
-                      QrImageView(
-                        data: 'EDSAPP:USER:$_userId',
-                        version: QrVersions.auto,
-                        size: 250.0,
-                        backgroundColor: Colors.white,
-                      )
-                    else
-                      const CircularProgressIndicator(
-                        color: Color(0xFF2C3E50),
-                      ), // Deep Slate
+                const SizedBox(height: 16),
+                // Title - Bold geometric sans-serif
+                Text(
+                  "Account Pending Approval",
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.primary, // EDS Blue
+                    letterSpacing: -0.5, // Tight geometric spacing
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
 
-                    const SizedBox(height: 32), // Airy spacing
-                    // User ID Display inside card
-                    if (_userId != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                        decoration: BoxDecoration(
-                          color: const Color(
-                            0xFF8A9A5B,
-                          ).withOpacity(0.05), // Soft Sage
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.fingerprint,
-                              size: 20,
-                              color: Color(0xFF8A9A5B), // Soft Sage
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              'ID: ${_userId!.substring(0, 8)}...',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                color: Color(0xFF1E293B),
-                                fontFamily: 'monospace',
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
+                // Subtitle
+                Text(
+                  "Show this QR code to admin for approval",
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: const Color(0xFF64748B),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32), // Airy spacing
+                // Large Floating Card with QR Code
+                Container(
+                  padding: const EdgeInsets.all(40),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(
+                      32,
+                    ), // Increased to 32px
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04), // 4% opacity
+                        blurRadius: 32, // 32px blur for floating effect
+                        offset: const Offset(0, 8),
                       ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 32), // Airy spacing
-              // Check Activation Button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _isChecking ? null : _checkActivationStatus,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 18),
-                    backgroundColor: const Color(0xFF8A9A5B), // Soft Sage
-                    foregroundColor: Colors.white,
-                    elevation: 4,
-                    shadowColor: const Color(
-                      0xFF8A9A5B,
-                    ).withOpacity(0.3), // Soft Sage
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(32), // 32px radius
-                    ),
+                    ],
                   ),
-                  icon: _isChecking
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
+                  child: Column(
+                    children: [
+                      // QR Code (removed pending icon)
+                      if (_userId != null)
+                        QrImageView(
+                          data: 'EDSAPP:USER:$_userId',
+                          version: QrVersions.auto,
+                          size: 250.0,
+                          backgroundColor: Colors.white,
                         )
-                      : const Icon(Icons.refresh),
-                  label: Text(
-                    _isChecking ? 'Checking...' : 'Check Activation Status',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
+                      else
+                        CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.primary,
+                        ), // EDS Blue
+
+                      const SizedBox(height: 32), // Airy spacing
+                      // User ID Display inside card
+                      if (_userId != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withOpacity(0.05), // EDS Blue
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.fingerprint,
+                                size: 20,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.primary, // EDS Blue
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'ID: ${_userId!.substring(0, 8)}...',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF1E293B),
+                                  fontFamily: 'monospace',
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 32), // Airy spacing
+                // Check Activation Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: _isChecking ? null : _checkActivationStatus,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.primary, // EDS Blue
+                      foregroundColor: Colors.white,
+                      elevation: 4,
+                      shadowColor: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.3), // EDS Blue
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(32), // 32px radius
+                      ),
+                    ),
+                    icon: _isChecking
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.refresh),
+                    label: Text(
+                      _isChecking ? 'Checking...' : 'Check Activation Status',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                 ),
-              ),
 
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-              // Help Text
-              Text(
-                'After admin approval, tap the button above to activate your account',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: const Color(0xFF94A3B8)),
-                textAlign: TextAlign.center,
-              ),
-            ],
+                // Help Text
+                Text(
+                  'After admin approval, tap the button above to activate your account',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF94A3B8),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
           ),
         ),
       ),

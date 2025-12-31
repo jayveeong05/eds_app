@@ -6,11 +6,11 @@ A mobile application for managing e-documents, promotions, and invoices with Fir
 
 ## 🎨 Brand Colors
 
-- **Primary:** Royal Blue `#3F51B5`
-- **Accent:** Red `#E53935`
-- **Card Background:** Light Blue Tint `#F5F7FF`
-- **Screen Background:** Light Blue-Gray `#F0F3FF`
-- **Profile Avatar:** Light EDS Blue `#E8EAF6`
+- **Primary:** Royal Blue `#141478` (Deep Royal Blue)
+- **Secondary:** Royal Blue `#141478` (Unified with Primary)
+- **Background:** Cloud Dancer `#F0EEE9` (Warm Off-White)
+- **Error:** Red `#DE1F26` (EDS Red)
+- **Text:** Dark Charcoal `#333333`
 
 ---
 
@@ -77,6 +77,9 @@ A mobile application for managing e-documents, promotions, and invoices with Fir
 
 ### 📚 Knowledge Base
 - **Document Library** - Centralized PDF documentation storage
+- **AI Chatbot Assistant** - Integrated chat for querying the knowledge base
+- **Smart Context** - Chatbot answers based on uploaded documents (RAG)
+- **Chat History** - Persisted chat sessions per user
 - **Search Functionality** - Search documents by title or subtitle
 - **Admin Upload Portal** - Web interface for uploading PDFs with metadata
 - **In-app PDF Viewer** - Seamless PDF viewing with zoom and text selection
@@ -146,10 +149,14 @@ eds_app/
 │   │   ├── invoices_screen.dart        # Invoice listing
 │   │   ├── code_detail_screen.dart     # Invoice detail with PDF viewer
 │   │   ├── knowledge_base_screen.dart  # Document library with search
+│   │   ├── knowledge_base_chat_screen.dart # AI Chat interface
 │   │   ├── pdf_viewer_screen.dart      # In-app PDF viewer
 │   │   └── profile_screen.dart         # User profile & settings
+│   ├── theme/
+│   │   └── eds_theme.dart              # Centralized theme configuration
 │   ├── services/
 │   │   ├── auth_service.dart           # Authentication logic
+│   │   ├── kb_chat_service.dart        # Chatbot API service
 │   │   └── upload_service.dart         # S3 upload (returns S3 keys)
 │   └── main.dart                       # App entry point
 ├── backend/
@@ -163,6 +170,9 @@ eds_app/
 │   │   ├── check_activation.php        # User status check
 │   │   ├── get_machine_codes.php       # Get distinct invoice codes
 │   │   ├── get_code_invoices.php       # Get invoices for specific code
+│   │   ├── send_kb_message.php         # Send message to AI agent
+│   │   ├── get_kb_messages.php         # Get chat history
+│   │   ├── clear_kb_history.php        # Clear chat history
 │   │   └── admin/
 │   │       ├── bulk_save_invoices.php  # Parse and save invoice filenames
 │   │       ├── get_all_invoices.php    # Admin invoice listing
@@ -322,6 +332,9 @@ In Flutter files, update endpoints:
 | `/api/add_promotion.php` | POST | Create new promotion | Token |
 | `/api/check_activation.php` | POST | Check user activation status | Token |
 | `/api/get_knowledge_base.php` | GET | Fetch knowledge base documents with search | None |
+| `/api/send_kb_message.php` | POST | Send user message to AI Agent and get response | Token |
+| `/api/get_kb_messages.php` | POST | Fetch user's chat history | Token |
+| `/api/clear_kb_history.php` | POST | Clear user's chat history | Token |
 | `/api/upload_knowledge_base.php` | POST | Upload PDF to knowledge base (admin) | None |
 | `/api/delete_knowledge_base.php` | POST | Delete knowledge base item (admin) | None |
 | `/api/get_presigned_url.php` | POST | Generate presigned URL for S3 file | None |
@@ -363,6 +376,13 @@ In Flutter files, update endpoints:
 ---
 
 ## ✅ Recent Updates (December 2025)
+
+### Theme & AI Chat (v1.5.0)
+- ✅ **Knowledge Base Chat** - Interactive AI chatbot for querying documentation
+- ✅ **Theme Centralization** - Implemented `EDSTheme` for consistent styling
+- ✅ **Brand Refresh** - Updated Logo, verified assets, and unified color scheme (Royal Blue dominant)
+- ✅ **UI Polish** - Refined icons, PDF viewer contrast, and "Remember Me" visibility
+- ✅ **Profile Fixes** - Implemented robust token refreshing to fix session timeouts
 
 ### Knowledge Base & PDF Viewing (v1.4.0)
 - ✅ **Knowledge Base Feature** - Document library with search and admin upload portal
@@ -498,5 +518,5 @@ Proprietary - E-Document Solutions (EDS)
 
 ---
 
-**Last Updated:** December 24, 2025  
-**Version:** 1.4.0 - Knowledge Base & PDF Viewer
+**Last Updated:** December 31, 2025  
+**Version:** 1.5.0 - Theme & AI Chat

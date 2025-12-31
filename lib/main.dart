@@ -2,7 +2,7 @@ import 'package:eds_app/theme/eds_theme.dart';
 import 'package:eds_app/screens/inactive_screen.dart';
 import 'package:eds_app/screens/main_navigation.dart';
 import 'package:eds_app/screens/login_screen.dart';
-import 'package:eds_app/screens/complete_profile_screen.dart';
+import 'package:eds_app/screens/registration_screen.dart';
 import 'package:eds_app/screens/landing_screen.dart';
 import 'package:eds_app/services/auth_service.dart';
 import 'package:eds_app/services/kb_chat_service.dart';
@@ -95,10 +95,10 @@ class _MyAppState extends State<MyApp> {
           '/inactive': (context) => const InactiveScreen(),
         },
         onGenerateRoute: (settings) {
-          if (settings.name == '/complete-profile') {
+          if (settings.name == '/register') {
             final args = settings.arguments as Map<String, dynamic>?;
             return MaterialPageRoute(
-              builder: (context) => CompleteProfileScreen(
+              builder: (context) => RegistrationScreen(
                 signInMethod: args?['signInMethod'] ?? 'email',
                 email: args?['email'],
                 password: args?['password'],

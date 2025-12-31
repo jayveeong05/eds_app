@@ -24,7 +24,7 @@ if (isset($_FILES['file']) && isset($_POST['folder'])) {
     $folder = $_POST['folder']; // e.g., 'promotions' or 'invoices'
     
     // Simple validation
-    if (!in_array($folder, ['promotions', 'invoices', 'avatars'])) {
+    if (!in_array($folder, ['promotions', 'invoices', 'avatars', 'news'])) {
         http_response_code(400);
         echo json_encode(array("message" => "Invalid folder specified."));
         exit;

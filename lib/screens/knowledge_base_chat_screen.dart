@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../services/kb_chat_service.dart';
 import '../widgets/chat_message_bubble.dart';
 import '../widgets/chat_input_field.dart';
+import 'chat_history_screen.dart';
 
 class KnowledgeBaseChatScreen extends StatefulWidget {
   const KnowledgeBaseChatScreen({super.key});
@@ -51,12 +52,14 @@ class _KnowledgeBaseChatScreenState extends State<KnowledgeBaseChatScreen> {
     });
   }
 
-  Future<void> _showClearHistoryDialog() async {
+  Future<void> _showNewChatDialog() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear Chat History'),
-        content: const Text('Are you sure you want to clear all chat history?'),
+        title: const Text('Start New Chat'),
+        content: const Text(
+          'Are you sure you want to start a new chat? This will clear the current conversation view.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -64,15 +67,17 @@ class _KnowledgeBaseChatScreenState extends State<KnowledgeBaseChatScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Clear'),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.primary,
+            ),
+            child: const Text('Start New'),
           ),
         ],
       ),
     );
 
     if (confirmed == true && mounted) {
-      await context.read<KbChatService>().clearHistory();
+      context.read<KbChatService>().startNewConversation();
     }
   }
 
@@ -101,30 +106,35 @@ class _KnowledgeBaseChatScreenState extends State<KnowledgeBaseChatScreen> {
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             onSelected: (value) {
-              if (value == 'clear') {
-                _showClearHistoryDialog();
-              } else if (value == 'refresh') {
-                context.read<KbChatService>().loadMessages();
+              if (value == 'new_chat') {
+                _showNewChatDialog();
+              } else if (value == 'history') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ChatHistoryScreen(),
+                  ),
+                );
               }
             },
             itemBuilder: (context) => [
               const PopupMenuItem(
-                value: 'refresh',
+                value: 'new_chat',
                 child: Row(
                   children: [
-                    Icon(Icons.refresh, size: 20),
+                    Icon(Icons.add_comment_outlined, size: 20),
                     SizedBox(width: 12),
-                    Text('Refresh'),
+                    Text('New Chat'),
                   ],
                 ),
               ),
               const PopupMenuItem(
-                value: 'clear',
+                value: 'history',
                 child: Row(
                   children: [
-                    Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                    Icon(Icons.history, size: 20),
                     SizedBox(width: 12),
-                    Text('Clear History', style: TextStyle(color: Colors.red)),
+                    Text('Chat History'),
                   ],
                 ),
               ),
@@ -161,7 +171,7 @@ class _KnowledgeBaseChatScreenState extends State<KnowledgeBaseChatScreen> {
                             chatService.loadMessages();
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: theme.colorScheme.secondary,
+                            backgroundColor: theme.colorScheme.primary,
                             foregroundColor: Colors.white,
                           ),
                           child: const Text('Retry'),
@@ -180,13 +190,13 @@ class _KnowledgeBaseChatScreenState extends State<KnowledgeBaseChatScreen> {
                           width: 120,
                           height: 120,
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.secondary.withOpacity(0.1),
+                            color: theme.colorScheme.primary.withOpacity(0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
                             Icons.chat_bubble_outline,
                             size: 60,
-                            color: theme.colorScheme.secondary,
+                            color: theme.colorScheme.primary,
                           ),
                         ),
                         const SizedBox(height: 24),

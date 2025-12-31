@@ -41,9 +41,7 @@ class ChatMessageBubble extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: isUser
-                    ? theme
-                          .colorScheme
-                          .secondary // EDS Red
+                    ? Colors.lightBlue[100] // User message light blue
                     : Colors.white,
                 borderRadius: BorderRadius.circular(16).copyWith(
                   bottomRight: isUser ? const Radius.circular(4) : null,
@@ -65,7 +63,7 @@ class ChatMessageBubble extends StatelessWidget {
                     Text(
                       parsedMessage['text']!,
                       style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSecondary,
+                        color: Colors.black87,
                         fontSize: 15,
                       ),
                     )

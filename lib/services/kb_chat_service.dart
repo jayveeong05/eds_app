@@ -3,15 +3,20 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/chat_message.dart';
+import '../models/chat_session.dart';
 
 class KbChatService extends ChangeNotifier {
   static const String baseUrl = 'http://10.0.2.2:8000/api';
 
   List<ChatMessage> _messages = [];
+  List<ChatSession> _sessions = [];
+  ChatSession? _currentSession;
   bool _isLoading = false;
   String? _error;
 
   List<ChatMessage> get messages => _messages;
+  List<ChatSession> get sessions => _sessions;
+  ChatSession? get currentSession => _currentSession;
   bool get isLoading => _isLoading;
   String? get error => _error;
 
@@ -32,9 +37,12 @@ class KbChatService extends ChangeNotifier {
         throw Exception('Not authenticated');
       }
 
-      final response = await http.get(
-        Uri.parse('$baseUrl/get_kb_messages.php?token=$token&limit=100'),
-      );
+      var url = '$baseUrl/get_kb_messages.php?token=$token&limit=100';
+      if (_currentSession != null) {
+        url += '&session_id=${_currentSession!.id}';
+      }
+
+      final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -64,6 +72,15 @@ class KbChatService extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Lazy Create Session if new
+      if (_currentSession == null) {
+        final newSession = await _createSessionInternal();
+        if (newSession != null) {
+          _currentSession = newSession;
+          _sessions.insert(0, newSession);
+        }
+      }
+
       final token = await _getToken();
       if (token == null) {
         throw Exception('Not authenticated');
@@ -72,7 +89,11 @@ class KbChatService extends ChangeNotifier {
       final response = await http.post(
         Uri.parse('$baseUrl/send_kb_message.php'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'token': token, 'message': text.trim()}),
+        body: jsonEncode({
+          'token': token,
+          'message': text.trim(),
+          'session_id': _currentSession?.id,
+        }),
       );
 
       if (response.statusCode == 200) {
@@ -165,31 +186,67 @@ class KbChatService extends ChangeNotifier {
     }
   }
 
-  /// Clear all chat history
-  Future<void> clearHistory() async {
+  /// Get all chat sessions
+  Future<void> getSessions() async {
     try {
       final token = await _getToken();
-      if (token == null) {
-        throw Exception('Not authenticated');
-      }
+      if (token == null) return;
 
-      final response = await http.post(
-        Uri.parse('$baseUrl/clear_kb_history.php'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'token': token}),
+      final response = await http.get(
+        Uri.parse('$baseUrl/get_kb_sessions.php?token=$token'),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['success']) {
-          _messages.clear();
+          _sessions = (data['data'] as List)
+              .map((json) => ChatSession.fromJson(json))
+              .toList();
           notifyListeners();
         }
       }
     } catch (e) {
-      _error = e.toString();
-      notifyListeners();
+      debugPrint('Error fetching sessions: $e');
     }
+  }
+
+  /// Start a new conversation (initialized locally)
+  void startNewConversation() {
+    _currentSession = null;
+    _messages.clear();
+    notifyListeners();
+  }
+
+  /// Internal: Create session on backend
+  Future<ChatSession?> _createSessionInternal({
+    String title = 'New Chat',
+  }) async {
+    try {
+      final token = await _getToken();
+      if (token == null) return null;
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/create_kb_session.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'token': token, 'title': title}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success']) {
+          return ChatSession.fromJson(data['data']);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error creating session: $e');
+    }
+    return null;
+  }
+
+  /// Set current session and load messages
+  void setCurrentSession(ChatSession? session) {
+    _currentSession = session;
+    loadMessages();
   }
 
   /// Clear error message

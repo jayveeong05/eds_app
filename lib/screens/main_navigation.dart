@@ -88,7 +88,7 @@ class _MainNavigationState extends State<MainNavigation> {
           ),
         ),
 
-        // Center elevated button
+        // Center elevated button (Blue background with dynamic icon color)
         Positioned(
           top: -28,
           child: GestureDetector(
@@ -102,21 +102,25 @@ class _MainNavigationState extends State<MainNavigation> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    theme.colorScheme.secondary,
-                    theme.colorScheme.secondary.withOpacity(0.8),
+                    theme.colorScheme.primary, // EDS Blue
+                    theme.colorScheme.primary.withOpacity(0.8),
                   ],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: theme.colorScheme.secondary.withOpacity(0.4),
+                    color: theme.colorScheme.primary.withOpacity(0.4),
                     blurRadius: 16,
                     offset: const Offset(0, 8),
                   ),
                 ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.home_rounded,
-                color: Colors.white,
+                color: _selectedIndex == 2
+                    ? theme
+                          .colorScheme
+                          .secondary // EDS Red when selected
+                    : theme.colorScheme.surface, // White when not selected
                 size: 28,
               ),
             ),
@@ -129,7 +133,7 @@ class _MainNavigationState extends State<MainNavigation> {
   Widget _buildNavItem(int index, IconData icon, String label) {
     final isSelected = _selectedIndex == index;
     final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
+    final selectedColor = theme.colorScheme.secondary; // EDS Red for nav bar
     final inactiveColor = theme.colorScheme.onSurface.withOpacity(0.5);
 
     return Expanded(
@@ -153,13 +157,13 @@ class _MainNavigationState extends State<MainNavigation> {
                 ),
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? primaryColor.withOpacity(0.1)
+                      ? selectedColor.withOpacity(0.1)
                       : Colors.transparent,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
                   icon,
-                  color: isSelected ? primaryColor : inactiveColor,
+                  color: isSelected ? selectedColor : inactiveColor,
                   size: 22,
                 ),
               ),
@@ -169,7 +173,7 @@ class _MainNavigationState extends State<MainNavigation> {
                 duration: const Duration(milliseconds: 300),
                 curve: Curves.easeInOut,
                 style: TextStyle(
-                  color: isSelected ? primaryColor : inactiveColor,
+                  color: isSelected ? selectedColor : inactiveColor,
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),

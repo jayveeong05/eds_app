@@ -47,6 +47,11 @@
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link <?php echo ($currentPage == 'news') ? 'active' : ''; ?>" href="news.php">
+                            <i class="bi bi-newspaper"></i> News
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link <?php echo ($currentPage == 'invoices') ? 'active' : ''; ?>" href="invoices.php">
                             <i class="bi bi-receipt-cutoff"></i> Invoices
                         </a>
