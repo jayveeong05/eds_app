@@ -6,6 +6,7 @@ import 'package:eds_app/screens/registration_screen.dart';
 import 'package:eds_app/screens/landing_screen.dart';
 import 'package:eds_app/services/auth_service.dart';
 import 'package:eds_app/services/kb_chat_service.dart';
+import 'package:eds_app/providers/theme_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -81,32 +82,41 @@ class _MyAppState extends State<MyApp> {
       );
     }
 
-    return ChangeNotifierProvider(
-      create: (_) => KbChatService(),
-      child: MaterialApp(
-        title: 'EDS App',
-        debugShowCheckedModeBanner: false,
-        theme: EDSTheme.lightTheme,
-        home: _getHomeWidget(),
-        routes: {
-          '/landing': (context) => const LandingScreen(),
-          '/login': (context) => const LoginScreen(),
-          '/dashboard': (context) => const MainNavigation(),
-          '/inactive': (context) => const InactiveScreen(),
-        },
-        onGenerateRoute: (settings) {
-          if (settings.name == '/register') {
-            final args = settings.arguments as Map<String, dynamic>?;
-            return MaterialPageRoute(
-              builder: (context) => RegistrationScreen(
-                signInMethod: args?['signInMethod'] ?? 'email',
-                email: args?['email'],
-                password: args?['password'],
-                name: args?['name'],
-              ),
-            );
-          }
-          return null;
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => KbChatService()),
+      ],
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProvider, _) {
+          return MaterialApp(
+            title: 'EDS App',
+            debugShowCheckedModeBanner: false,
+            theme: EDSTheme.lightTheme,
+            darkTheme: EDSTheme.darkTheme,
+            themeMode: themeProvider.themeMode,
+            home: _getHomeWidget(),
+            routes: {
+              '/landing': (context) => const LandingScreen(),
+              '/login': (context) => const LoginScreen(),
+              '/dashboard': (context) => const MainNavigation(),
+              '/inactive': (context) => const InactiveScreen(),
+            },
+            onGenerateRoute: (settings) {
+              if (settings.name == '/register') {
+                final args = settings.arguments as Map<String, dynamic>?;
+                return MaterialPageRoute(
+                  builder: (context) => RegistrationScreen(
+                    signInMethod: args?['signInMethod'] ?? 'email',
+                    email: args?['email'],
+                    password: args?['password'],
+                    name: args?['name'],
+                  ),
+                );
+              }
+              return null;
+            },
+          );
         },
       ),
     );

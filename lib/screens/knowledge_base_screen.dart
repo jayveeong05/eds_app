@@ -154,7 +154,7 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                   // Search bar
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: theme.colorScheme.surface,
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
@@ -190,7 +190,7 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                           borderSide: BorderSide.none,
                         ),
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: theme.colorScheme.surface,
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 20,
                           vertical: 16,
@@ -250,7 +250,7 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: theme.colorScheme.surface,
                               borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
@@ -263,11 +263,11 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                             child: ListTile(
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 20,
-                                vertical: 12,
+                                vertical: 8,
                               ),
                               leading: Container(
-                                width: 48,
-                                height: 48,
+                                width: 40,
+                                height: 40,
                                 decoration: BoxDecoration(
                                   color: theme.colorScheme.primary.withOpacity(
                                     0.1,
@@ -277,7 +277,7 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
                                 child: Icon(
                                   Icons.picture_as_pdf,
                                   color: theme.colorScheme.primary,
-                                  size: 24,
+                                  size: 20,
                                 ),
                               ),
                               title: Text(

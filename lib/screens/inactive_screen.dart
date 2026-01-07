@@ -48,11 +48,12 @@ class _InactiveScreenState extends State<InactiveScreen> {
   }
 
   Widget _buildModernBottomNav() {
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFFFFF), // Pure White
+        color: theme.colorScheme.surface, // Pure White
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           // Top shadow for depth
@@ -262,7 +263,7 @@ class _InactiveHomeContentState extends State<InactiveHomeContent> {
                 Container(
                   padding: const EdgeInsets.all(40),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.surface,
                     borderRadius: BorderRadius.circular(
                       32,
                     ), // Increased to 32px

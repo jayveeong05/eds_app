@@ -285,7 +285,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: theme.colorScheme.surface,
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
@@ -298,11 +298,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: ListTile(
                             contentPadding: const EdgeInsets.symmetric(
                               horizontal: 20,
-                              vertical: 8,
+                              vertical: 4,
                             ),
                             leading: Container(
-                              width: 40,
-                              height: 40,
+                              width: 36,
+                              height: 36,
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.primary.withOpacity(
                                   0.1,
@@ -310,9 +310,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(
-                                Icons.receipt_long,
+                                Icons.precision_manufacturing,
                                 color: theme.colorScheme.primary, // Royal Blue
-                                size: 20,
+                                size: 18,
                               ),
                             ),
                             title: Text(

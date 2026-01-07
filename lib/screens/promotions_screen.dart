@@ -137,22 +137,11 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                           style: theme.textTheme.headlineMedium,
                         ),
                         // Refresh button
-                        Container(
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.refresh,
-                              size: 20,
-                              color: theme.colorScheme.primary,
-                            ),
-                            padding: const EdgeInsets.all(8),
-                            constraints: const BoxConstraints(),
-                            onPressed: _fetchPromotions,
-                            tooltip: 'Refresh',
-                          ),
+                        IconButton(
+                          icon: const Icon(Icons.refresh),
+                          onPressed: _fetchPromotions,
+                          tooltip: 'Refresh',
+                          color: theme.colorScheme.primary,
                         ),
                       ],
                     ),
@@ -189,7 +178,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                         // Left Arrow
                         Container(
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: theme.colorScheme.surface,
                             borderRadius: BorderRadius.circular(12),
                             boxShadow: [
                               BoxShadow(
@@ -406,7 +395,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
                 flex: 2,
                 child: Container(
                   width: double.infinity,
-                  color: Colors.white,
+                  color: theme.colorScheme.surface,
                   padding: const EdgeInsets.all(24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

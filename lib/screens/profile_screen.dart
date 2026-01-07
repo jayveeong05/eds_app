@@ -6,8 +6,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/upload_service.dart';
+import '../providers/theme_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -565,7 +567,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           // CONSOLIDATED ACCOUNT SETTINGS CARD
                           Container(
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: theme.colorScheme.surface,
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
@@ -867,6 +869,48 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             color: Colors.white,
                                             letterSpacing: 0.5,
                                           ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const Divider(height: 1),
+
+                                // Dark Mode Toggle Row
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 20,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 90,
+                                        child: Text(
+                                          'Dark Mode',
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: onSurface.withOpacity(0.6),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 20),
+                                      Expanded(
+                                        child: Consumer<ThemeProvider>(
+                                          builder: (context, themeProvider, _) {
+                                            return Switch(
+                                              value: themeProvider.isDarkMode,
+                                              onChanged: (value) {
+                                                themeProvider.setThemeMode(
+                                                  value
+                                                      ? ThemeMode.dark
+                                                      : ThemeMode.light,
+                                                );
+                                              },
+                                              activeColor: primaryColor,
+                                            );
+                                          },
                                         ),
                                       ),
                                     ],

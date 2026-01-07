@@ -42,7 +42,7 @@ class ChatMessageBubble extends StatelessWidget {
               decoration: BoxDecoration(
                 color: isUser
                     ? Colors.lightBlue[100] // User message light blue
-                    : Colors.white,
+                    : theme.colorScheme.surface,
                 borderRadius: BorderRadius.circular(16).copyWith(
                   bottomRight: isUser ? const Radius.circular(4) : null,
                   bottomLeft: !isUser ? const Radius.circular(4) : null,
@@ -83,7 +83,8 @@ class ChatMessageBubble extends StatelessWidget {
                           color: theme.colorScheme.secondary,
                         ),
                         code: TextStyle(
-                          backgroundColor: Colors.grey[100],
+                          backgroundColor:
+                              theme.colorScheme.surfaceContainerHighest,
                           fontFamily: 'monospace',
                           fontSize: 14,
                           color: theme.colorScheme.primary,

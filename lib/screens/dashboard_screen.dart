@@ -226,6 +226,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildPromotionCard(Map<String, dynamic> promo) {
+    final theme = Theme.of(context);
     final user = promo['user'] ?? {};
     final email = user['email'] ?? 'Unknown User';
     final profileImageUrl = user['profile_image_url'];
@@ -236,7 +237,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         margin: const EdgeInsets.only(bottom: 24),
         height: 400,
         decoration: BoxDecoration(
-          color: const Color(0xFFFFFFFF),
+          color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(32), // Increased to 32px
           boxShadow: [
             BoxShadow(
@@ -350,7 +351,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 flex: 2,
                 child: Container(
                   width: double.infinity,
-                  color: Colors.white,
+                  color: theme.colorScheme.surface,
                   padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

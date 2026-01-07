@@ -176,7 +176,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: theme.colorScheme.surface,
                               borderRadius: BorderRadius.circular(
                                 24,
                               ), // 24px radius
@@ -194,11 +194,11 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                             child: ListTile(
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 24, // Increased for airy feel
-                                vertical: 16, // Increased vertical padding
+                                vertical: 8,
                               ),
                               leading: Container(
-                                width: 48,
-                                height: 48,
+                                width: 40,
+                                height: 40,
                                 decoration: BoxDecoration(
                                   color: primaryColor.withOpacity(0.1),
                                   shape: BoxShape.circle,
@@ -206,6 +206,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
                                 child: Icon(
                                   Icons.precision_manufacturing,
                                   color: primaryColor,
+                                  size: 20,
                                 ),
                               ),
                               title: Text(

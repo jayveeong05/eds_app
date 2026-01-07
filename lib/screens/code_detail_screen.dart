@@ -208,7 +208,7 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: theme.colorScheme.surface,
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
@@ -221,11 +221,11 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
                             child: ListTile(
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 20,
-                                vertical: 12,
+                                vertical: 8,
                               ),
                               leading: Container(
-                                width: 48,
-                                height: 48,
+                                width: 40,
+                                height: 40,
                                 decoration: BoxDecoration(
                                   color: errorColor.withOpacity(0.1),
                                   shape: BoxShape.circle,
@@ -233,6 +233,7 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
                                 child: Icon(
                                   Icons.receipt_long,
                                   color: primaryColor,
+                                  size: 20,
                                 ),
                               ),
                               title: Text(
