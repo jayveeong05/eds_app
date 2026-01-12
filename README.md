@@ -404,6 +404,11 @@ In Flutter files, update endpoints:
 - ✅ **Product URL Validation** - Robust null handling and URL validation with error messages
 - ✅ **Database Logging** - `customer_requests` table tracks all anonymous interactions
 
+### Security Update (v1.6.1)
+- ✅ **Secure Device ID** - Replaced legacy device tracking with secure, privacy-compliant UUID system
+- ✅ **Persistence Upgrade** - Device ID now persists across app reinstalls using secure storage
+- ✅ **Privacy Compliance** - Removed deprecated Android ID usage in favor of randomly generated UUIDs
+
 ## ✅ Recent Updates (December 2025)
 
 ### Theme & AI Chat (v1.5.0)
@@ -547,5 +552,5 @@ Proprietary - E-Document Solutions (EDS)
 
 ---
 
-**Last Updated:** December 31, 2025  
-**Version:** 1.5.0 - Theme & AI Chat
+**Last Updated:** January 12, 2026  
+**Version:** 1.6.1 - Device ID Security Update

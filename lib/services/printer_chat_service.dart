@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:device_info_plus/device_info_plus.dart';
-import 'dart:io';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:uuid/uuid.dart';
 import '../models/printer_recommendation.dart';
 
 class PrinterChatService extends ChangeNotifier {
@@ -20,21 +20,30 @@ class PrinterChatService extends ChangeNotifier {
   bool get hasRecommendations =>
       _recommendations != null && _recommendations!.isNotEmpty;
 
-  /// Get unique device identifier
+  // Secure storage instance
+  static const _storage = FlutterSecureStorage();
+  static const _deviceIdKey = 'printer_device_id';
+
+  /// Get unique device identifier using secure UUID-based approach
+  /// This persists across app reinstalls and is privacy-compliant
   Future<String> _getDeviceId() async {
-    final deviceInfo = DeviceInfoPlugin();
     try {
-      if (Platform.isAndroid) {
-        final androidInfo = await deviceInfo.androidInfo;
-        return androidInfo.id;
-      } else if (Platform.isIOS) {
-        final iosInfo = await deviceInfo.iosInfo;
-        return iosInfo.identifierForVendor ?? 'unknown_ios_device';
+      // Try to retrieve existing device ID
+      String? deviceId = await _storage.read(key: _deviceIdKey);
+
+      // If no device ID exists, generate a new one
+      if (deviceId == null || deviceId.isEmpty) {
+        deviceId = const Uuid().v4();
+        await _storage.write(key: _deviceIdKey, value: deviceId);
+        debugPrint('Generated new device ID: ${deviceId.substring(0, 8)}...');
       }
+
+      return deviceId;
     } catch (e) {
-      debugPrint('Error getting device ID: $e');
+      debugPrint('Error accessing secure storage: $e');
+      // Fallback to timestamp-based ID if secure storage fails
+      return 'fallback_device_${DateTime.now().millisecondsSinceEpoch}';
     }
-    return 'unknown_device_${DateTime.now().millisecondsSinceEpoch}';
   }
 
   /// Send message to printer chat
