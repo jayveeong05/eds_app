@@ -61,6 +61,11 @@
                             <i class="bi bi-book"></i> Knowledge Base
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link <?php echo ($currentPage == 'printer_requests') ? 'active' : ''; ?>" href="printer_requests.php">
+                            <i class="bi bi-printer"></i> Printer Requests
+                        </a>
+                    </li>
                 </ul>
                 <ul class="navbar-nav">
                     <li class="nav-item dropdown">

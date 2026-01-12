@@ -94,6 +94,24 @@ CREATE TABLE IF NOT EXISTS admin_activity_log (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Printer Recommendation Requests Table
+-- Tracks anonymous device requests for printer recommendations
+CREATE TABLE IF NOT EXISTS customer_requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    device_id VARCHAR(255) NOT NULL,
+    
+    -- Extracted Requirements (from 'request' JSON)
+    office_size VARCHAR(100),           -- e.g., "Small office, 5 people"
+    monthly_volume INT,                 -- Numeric volume, e.g., 3000
+    color_preference VARCHAR(20),       -- "Color" or "Mono"
+    paper_size VARCHAR(10),             -- "A4" or "A3"
+    scanning_frequency VARCHAR(50),     -- "None", "Occasional", "Heavy"
+    budget_level VARCHAR(50),           -- "Low", "Medium", "High"
+    
+    -- Metadata
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Performance indexes
 CREATE INDEX IF NOT EXISTS idx_invoices_code ON invoices(code);
 CREATE INDEX IF NOT EXISTS idx_invoices_code_month ON invoices(code, month);
@@ -105,3 +123,5 @@ CREATE INDEX IF NOT EXISTS idx_activity_log_created ON admin_activity_log(create
 CREATE INDEX IF NOT EXISTS idx_chat_user_id ON chat_messages(user_id);
 CREATE INDEX IF NOT EXISTS idx_chat_created_at ON chat_messages(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_news_created_at ON news(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_customer_requests_device ON customer_requests(device_id);
+CREATE INDEX IF NOT EXISTS idx_customer_requests_created ON customer_requests(created_at DESC);

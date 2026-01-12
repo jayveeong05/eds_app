@@ -6,6 +6,7 @@ import '../models/news.dart';
 import '../services/news_service.dart';
 import 'code_detail_screen.dart';
 import 'news_detail_screen.dart';
+import 'printer_matcher_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -229,6 +230,90 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ],
                       ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Printer Matcher Feature Card (NEW)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PrinterMatcherScreen(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          theme.colorScheme.primary,
+                          theme.colorScheme.primary.withOpacity(0.8),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.colorScheme.primary.withOpacity(0.3),
+                          blurRadius: 16,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(
+                            Icons.print_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Find Your Perfect Printer',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Get AI-powered recommendations',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.9),
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(
+                          Icons.arrow_forward_ios,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
 
               const SizedBox(height: 24),

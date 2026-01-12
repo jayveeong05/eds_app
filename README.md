@@ -87,6 +87,19 @@ A mobile application for managing e-documents, promotions, and invoices with Fir
 - **S3 Integration** - Secure file storage with presigned URL access
 - **Pull-to-refresh** - Update document list
 
+### 🖨️ Printer Matcher (AI-Powered Recommendations)
+- **Smart Questionnaire** - 6-question guided conversation flow
+- **AI-Driven Matching** - DigitalOcean Agent analyzes requirements and recommends top 3 printers
+- **Anonymous Tracking** - Device-based tracking (no login required)
+- **Suggestion Chips** - Quick-start prompts (e.g., "Small office printer")
+- **Match Scores** - Percentage-based compatibility scores
+- **Detailed Reasoning** - Bullet-point explanations for each recommendation
+- **Product Links** - Direct links to printer product pages
+- **Empty State Design** - Welcoming UI with large icon and suggestions
+- **Admin Analytics** - View all customer requests with filtering and CSV export
+- **S3 Knowledge Base** - Printer specs uploaded to S3 `printers/` folder
+- **Template System** - JSON format guide with downloadable template
+
 ### 🧭 Navigation
 - **5-Tab Bottom Navigation** - Promotions | Invoices | Home | Knowledge Base | Profile
 - **Center-Elevated Home Button** - Prominent circular button with gradient background
@@ -111,6 +124,8 @@ A mobile application for managing e-documents, promotions, and invoices with Fir
 - **QR Flutter** - QR code generation
 - **Image Picker** - Photo selection
 - **Syncfusion PDF Viewer** - In-app PDF viewing with zoom and text selection
+- **URL Launcher** - External link handling
+- **Device Info Plus** - Device identification for anonymous tracking
 
 ### Backend (PHP)
 - **PHP 8+** - Server-side logic
@@ -374,6 +389,20 @@ In Flutter files, update endpoints:
 - ⏳ **Web** - Needs testing/adjustments
 
 ---
+
+## ✅ Recent Updates (January 2026)
+
+### Printer Matcher AI (v1.6.0)
+- ✅ **AI-Powered Printer Recommendations** - Interactive chatbot that guides users through requirements
+- ✅ **Anonymous Device Tracking** - Device ID-based tracking without login requirement
+- ✅ **6-Question Flow** - Office size, volume, color, paper size, scanning, budget
+- ✅ **Top 3 Recommendations** - AI Agent returns best matches with scores and reasoning
+- ✅ **Suggestion Chips** - Quick-start prompts for common scenarios
+- ✅ **Admin Analytics Dashboard** - View all customer requests with filtering and CSV export
+- ✅ **S3 Knowledge Base Upload** - Admin panel for uploading printer specs to S3 `printers/` folder
+- ✅ **JSON Template System** - Format guide with downloadable template for easy data entry
+- ✅ **Product URL Validation** - Robust null handling and URL validation with error messages
+- ✅ **Database Logging** - `customer_requests` table tracks all anonymous interactions
 
 ## ✅ Recent Updates (December 2025)
 

@@ -21,13 +21,26 @@ class Database {
         
         // Vercel/Neon often requires SSL
         $sslMode = getenv('POSTGRES_SSLMODE') ?: 'require'; 
+        
+        // Neon endpoint ID (first part of hostname before first dot)
+        $endpoint = getenv('POSTGRES_ENDPOINT') ?: '';
 
         try {
             // Detect Environment: Cloud (Postgres) vs Local (MySQL)
             // If POSTGRES_HOST is set, we assume we are using Neon/Postgres
             if (getenv('POSTGRES_HOST')) {
                 // Use PostgreSQL (Neon)
+                // Extract endpoint ID from hostname if not explicitly set
+                if (empty($endpoint) && !empty($this->host)) {
+                    $hostParts = explode('.', $this->host);
+                    $endpoint = $hostParts[0]; // e.g., "ep-abc123" from "ep-abc123.region.neon.tech"
+                }
+                
+                // Build DSN with endpoint parameter for Neon SNI support
                 $dsn = "pgsql:host=" . $this->host . ";port=5432;dbname=" . $this->db_name . ";sslmode=" . $sslMode;
+                if (!empty($endpoint)) {
+                    $dsn .= ";options='endpoint=" . $endpoint . "'";
+                }
                 
                 $options = [
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,

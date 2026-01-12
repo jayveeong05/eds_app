@@ -49,6 +49,7 @@ dependencies:
   share_plus: ^10.1.4
   syncfusion_flutter_pdfviewer: ^32.1.20
   flutter_markdown: ^0.7.4+11.20
+  device_info_plus: ^12.3.0
 
 dev_dependencies:
   flutter_test:

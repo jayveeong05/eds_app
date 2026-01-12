@@ -6,6 +6,7 @@ import 'package:eds_app/screens/registration_screen.dart';
 import 'package:eds_app/screens/landing_screen.dart';
 import 'package:eds_app/services/auth_service.dart';
 import 'package:eds_app/services/kb_chat_service.dart';
+import 'package:eds_app/services/printer_chat_service.dart';
 import 'package:eds_app/providers/theme_provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -86,6 +87,7 @@ class _MyAppState extends State<MyApp> {
       providers: [
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => KbChatService()),
+        ChangeNotifierProvider(create: (_) => PrinterChatService()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProvider, _) {
