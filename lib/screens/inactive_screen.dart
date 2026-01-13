@@ -30,7 +30,7 @@ class _InactiveScreenState extends State<InactiveScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0EEE9),
+      // backgroundColor: const Color(0xFFF0EEE9),
       body: Stack(
         children: [
           // Main content
@@ -214,7 +214,7 @@ class _InactiveHomeContentState extends State<InactiveHomeContent> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF0EEE9), // Cloud Dancer
+      // backgroundColor: const Color(0xFFF0EEE9), // REMOVED: Let theme handle it
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -243,7 +243,8 @@ class _InactiveHomeContentState extends State<InactiveHomeContent> {
                 Text(
                   "Account Pending Approval",
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.primary, // EDS Blue
+                    // color: Theme.of(context).colorScheme.primary, // REMOVED: Use default text color
+                    fontWeight: FontWeight.bold,
                     letterSpacing: -0.5, // Tight geometric spacing
                   ),
                   textAlign: TextAlign.center,
@@ -254,7 +255,7 @@ class _InactiveHomeContentState extends State<InactiveHomeContent> {
                 Text(
                   "Show this QR code to admin for approval",
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: const Color(0xFF64748B),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -299,9 +300,10 @@ class _InactiveHomeContentState extends State<InactiveHomeContent> {
                             vertical: 12,
                           ),
                           decoration: BoxDecoration(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.primary.withOpacity(0.05), // EDS Blue
+                            color: Theme.of(context).colorScheme.primary
+                                .withOpacity(
+                                  0.1,
+                                ), // Increased opacity for visibility
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
@@ -317,9 +319,11 @@ class _InactiveHomeContentState extends State<InactiveHomeContent> {
                               const SizedBox(width: 8),
                               Text(
                                 'ID: ${_userId!.substring(0, 8)}...',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
-                                  color: Color(0xFF1E293B),
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                   fontFamily: 'monospace',
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -378,7 +382,7 @@ class _InactiveHomeContentState extends State<InactiveHomeContent> {
                 Text(
                   'After admin approval, tap the button above to activate your account',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF94A3B8),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                   textAlign: TextAlign.center,
                 ),

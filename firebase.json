@@ -1,0 +1,1 @@
+{"hosting":{"public":"build/web","ignore":["firebase.json","**/.*","**/node_modules/**"],"rewrites":[{"source":"**","destination":"/index.html"}]},"flutter":{"platforms":{"dart":{"lib/firebase_options.dart":{"projectId":"eds-app-1758d","configurations":{"web":"1:937666435898:web:9afd33bac3b0b64e69ce03"}}}}}}

@@ -79,43 +79,146 @@ $currentPage = 'dashboard';
     </div>
 </div>
 
-<!-- Quick Actions -->
+<!-- Management Modules -->
 <div class="row g-4 mb-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <i class="bi bi-lightning-fill"></i> Quick Actions
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="users.php" class="btn btn-outline-primary">
-                        <i class="bi bi-people"></i> Manage Users
-                    </a>
-                    <a href="promotions.php" class="btn btn-outline-primary">
-                        <i class="bi bi-megaphone"></i> Manage Promotions
-                    </a>
+    <div class="col-12">
+        <h5 class="text-secondary border-bottom pb-2">
+            <i class="bi bi-grid-fill me-2"></i>Management Modules
+        </h5>
+    </div>
+
+    <!-- Users -->
+    <div class="col-md-4 col-lg-3">
+        <a href="users.php" class="text-decoration-none">
+            <div class="card h-100 hover-shadow">
+                <div class="card-body text-center py-4">
+                    <div class="display-5 text-primary mb-3"><i class="bi bi-people"></i></div>
+                    <h6 class="card-title text-dark">User Management</h6>
+                    <small class="text-muted">Manage app users & approvals</small>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
-    
-    <div class="col-md-6">
+
+    <!-- Invoices -->
+    <div class="col-md-4 col-lg-3">
+        <a href="invoices.php" class="text-decoration-none">
+            <div class="card h-100 hover-shadow">
+                <div class="card-body text-center py-4">
+                    <div class="display-5 text-success mb-3"><i class="bi bi-receipt-cutoff"></i></div>
+                    <h6 class="card-title text-dark">Invoices</h6>
+                    <small class="text-muted">Upload & view invoices</small>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Promotions -->
+    <div class="col-md-4 col-lg-3">
+        <a href="promotions.php" class="text-decoration-none">
+            <div class="card h-100 hover-shadow">
+                <div class="card-body text-center py-4">
+                    <div class="display-5 text-warning mb-3"><i class="bi bi-megaphone"></i></div>
+                    <h6 class="card-title text-dark">Promotions</h6>
+                    <small class="text-muted">Manage banners & ads</small>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- News -->
+    <div class="col-md-4 col-lg-3">
+        <a href="news.php" class="text-decoration-none">
+            <div class="card h-100 hover-shadow">
+                <div class="card-body text-center py-4">
+                    <div class="display-5 text-info mb-3"><i class="bi bi-newspaper"></i></div>
+                    <h6 class="card-title text-dark">News & Updates</h6>
+                    <small class="text-muted">Post company news</small>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Knowledge Base -->
+    <div class="col-md-4 col-lg-3">
+        <a href="knowledge_base.php" class="text-decoration-none">
+            <div class="card h-100 hover-shadow">
+                <div class="card-body text-center py-4">
+                    <div class="display-5 text-danger mb-3"><i class="bi bi-book"></i></div>
+                    <h6 class="card-title text-dark">Knowledge Base</h6>
+                    <small class="text-muted">Manage FAQ & Guides</small>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Printer Requests -->
+    <div class="col-md-4 col-lg-3">
+        <a href="printer_requests.php" class="text-decoration-none">
+            <div class="card h-100 hover-shadow">
+                <div class="card-body text-center py-4">
+                    <div class="display-5 text-dark mb-3"><i class="bi bi-printer"></i></div>
+                    <h6 class="card-title text-dark">Printer Requests</h6>
+                    <small class="text-muted">Printer chat leads</small>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Scan QR -->
+    <div class="col-md-4 col-lg-3">
+        <a href="scan.php" class="text-decoration-none">
+            <div class="card h-100 hover-shadow">
+                <div class="card-body text-center py-4">
+                    <div class="display-5 text-secondary mb-3"><i class="bi bi-qr-code-scan"></i></div>
+                    <h6 class="card-title text-dark">Scan QR</h6>
+                    <small class="text-muted">Quick user lookup</small>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="row mb-4">
+    <div class="col-12">
         <div class="card">
-            <div class="card-header">
-                <i class="bi bi-graph-up"></i> Recent Activity
+            <div class="card-header bg-light">
+                <i class="bi bi-clock-history me-2"></i> System Activity
             </div>
             <div class="card-body">
-                <p class="text-muted mb-2">
-                    <i class="bi bi-person-plus me-2"></i> 
-                    <span id="recentRegs">0</span> new registrations this week
-                </p>
-                <p class="text-muted mb-2">
-                    <i class="bi bi-shield-check me-2"></i> 
-                    <span id="totalAdmins">0</span> administrators
-                </p>
-                <small class="text-muted">
-                    <i class="bi bi-clock"></i> Last updated: <span id="lastUpdate">Now</span>
-                </small>
+                <div class="row align-items-center">
+                    <div class="col-md-4 mb-3 mb-md-0">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle me-3">
+                                <i class="bi bi-person-plus text-primary h4 mb-0"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0" id="recentRegs">0</h5>
+                                <small class="text-muted">New registrations this week</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3 mb-md-0 border-start border-end">
+                        <div class="d-flex align-items-center justify-content-center">
+                            <div class="bg-success bg-opacity-10 p-3 rounded-circle me-3">
+                                <i class="bi bi-shield-check text-success h4 mb-0"></i>
+                            </div>
+                            <div>
+                                <h5 class="mb-0" id="totalAdmins">0</h5>
+                                <small class="text-muted">Active Administrators</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="d-flex align-items-center justify-content-end">
+                            <div class="text-end">
+                                <small class="text-muted d-block">Last Updated</small>
+                                <span class="badge bg-secondary" id="lastUpdate">Just now</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
