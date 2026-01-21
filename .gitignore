@@ -95,10 +95,10 @@ docker-compose.yml
 Dockerfile
 .dockerignore
 
-# Backend API (Vercel serverless)
-api/
+# Backend API - Only ignore dev/test files, NOT the entire api/ directory
+# api/  # REMOVED - API code must be tracked in git
 public/router_dev.php
-src/
+# src/  # REMOVED - Admin panel must be tracked in git
 
 # Additional config
 .htaccess

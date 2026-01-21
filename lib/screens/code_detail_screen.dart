@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'pdf_viewer_screen.dart';
 import '../config/environment.dart';
+import '../services/auth_service.dart';
 
 class CodeDetailScreen extends StatefulWidget {
   final String machineCode;
@@ -31,10 +32,22 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
     });
 
     try {
+      // Get user authentication token
+      final authService = AuthService();
+      final token = await authService.getValidToken();
+
+      if (token == null) {
+        setState(() {
+          _errorMessage = 'Authentication required. Please log in again.';
+          _isLoading = false;
+        });
+        return;
+      }
+
       final response = await http.post(
         Uri.parse('${Environment.apiUrl}/get_code_invoices.php'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'code': widget.machineCode}),
+        body: jsonEncode({'code': widget.machineCode, 'idToken': token}),
       );
 
       if (response.statusCode == 200) {
@@ -50,6 +63,17 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
             _isLoading = false;
           });
         }
+      } else if (response.statusCode == 401) {
+        setState(() {
+          _errorMessage = 'Session expired. Please log in again.';
+          _isLoading = false;
+        });
+      } else if (response.statusCode == 403) {
+        setState(() {
+          _errorMessage =
+              'Access denied. You do not have permission to view this machine code.';
+          _isLoading = false;
+        });
       } else {
         setState(() {
           _errorMessage = 'Server error: ${response.statusCode}';

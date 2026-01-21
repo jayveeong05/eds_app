@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'code_detail_screen.dart';
 import '../config/environment.dart';
+import '../services/auth_service.dart';
 
 class InvoicesScreen extends StatefulWidget {
   const InvoicesScreen({super.key});
@@ -29,8 +30,22 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
     });
 
     try {
-      final response = await http.get(
+      // Get user authentication token
+      final authService = AuthService();
+      final token = await authService.getValidToken();
+
+      if (token == null) {
+        setState(() {
+          _errorMessage = 'Authentication required. Please log in again.';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      final response = await http.post(
         Uri.parse('${Environment.apiUrl}/get_machine_codes.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'idToken': token}),
       );
 
       if (response.statusCode == 200) {
@@ -46,6 +61,11 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
             _isLoading = false;
           });
         }
+      } else if (response.statusCode == 401) {
+        setState(() {
+          _errorMessage = 'Session expired. Please log in again.';
+          _isLoading = false;
+        });
       } else {
         setState(() {
           _errorMessage = 'Server error: ${response.statusCode}';

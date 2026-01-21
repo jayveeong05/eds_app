@@ -8,6 +8,7 @@ import 'code_detail_screen.dart';
 import 'news_detail_screen.dart';
 import 'printer_matcher_screen.dart';
 import '../config/environment.dart';
+import '../services/auth_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -102,8 +103,22 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      final response = await http.get(
+      // Get user authentication token
+      final authService = AuthService();
+      final token = await authService.getValidToken();
+
+      if (token == null) {
+        // Silent failure for home screen if not logged in
+        setState(() {
+          _isLoadingInvoices = false;
+        });
+        return;
+      }
+
+      final response = await http.post(
         Uri.parse('${Environment.apiUrl}/get_machine_codes.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'idToken': token}),
       );
 
       if (response.statusCode == 200) {

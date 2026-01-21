@@ -66,7 +66,9 @@ A mobile application for managing e-documents, promotions, and invoices with Fir
 - **Light blue background** - Cohesive color scheme
 
 ### 📄 Invoices
-- **Bulk Upload System** - Admin panel for uploading multiple PDFs
+- **User Assignment** - Admin assigns machine codes to specific users
+- **Secure Access** - Users only see invoices for their assigned machine codes
+- **Bulk Upload System** - Admin panel for uploading multiple PDFs with assignment
 - **Client-side Validation** - Validates `CODE-MONTH.pdf` format before upload
 - **Replacement Strategy** - New uploads replace old data (max 12 months per machine)
 - **Filename Parsing** - Automatic extraction of machine code and month from filename
@@ -321,10 +323,19 @@ CREATE TABLE promotions (
 -- Invoices table
 CREATE TABLE invoices (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  month_date DATE NOT NULL,
-  pdf_url TEXT NOT NULL,
+  code VARCHAR(50) NOT NULL,
+  month VARCHAR(20) NOT NULL,
+  file_url TEXT NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- User Codes (Machine Code Assignment)
+CREATE TABLE user_codes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    code VARCHAR(50) NOT NULL,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, code)
 );
 ```
 
@@ -660,5 +671,14 @@ Proprietary - E-Document Solutions (EDS)
 
 ---
 
-**Last Updated:** January 12, 2026  
-**Version:** 1.6.1 - Device ID Security Update
+### Invoice Security Update (v1.6.3 - January 21, 2026)
+- ✅ **User-Specific Filtering** - Invoices are now strictly filtered by user assignment
+- ✅ **Secure Authorization** - Backend verifies user ownership of machine codes before access
+- ✅ **Admin Assignment UI** - New workflow in admin panel to assign uploaded invoices to users
+- ✅ **Database Optimization** - New `user_codes` junction table for efficient code-to-user mapping
+- ✅ **Mobile App Update** - Home screen and Invoice list now show only assigned machine codes
+
+---
+ 
+**Last Updated:** January 21, 2026  
+**Version:** 1.6.3 - User-Specific Invoice Filtering

@@ -1,12 +1,15 @@
 -- Users Table
 -- Re-creating with firebase_uid
+DROP TABLE IF EXISTS user_codes;
 DROP TABLE IF EXISTS invoices;
 DROP TABLE IF EXISTS promotions;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS news;
 DROP TABLE IF EXISTS chat_sessions;
 DROP TABLE IF EXISTS chat_messages;
 DROP TABLE IF EXISTS admin_activity_log;
 DROP TABLE IF EXISTS knowledge_base;
+DROP TABLE IF EXISTS customer_requests;
 
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -112,6 +115,15 @@ CREATE TABLE IF NOT EXISTS customer_requests (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- User Codes Table (User-Specific Invoice Filtering)
+CREATE TABLE IF NOT EXISTS user_codes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    code VARCHAR(50) NOT NULL,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, code)
+);
+
 -- Performance indexes
 CREATE INDEX IF NOT EXISTS idx_invoices_code ON invoices(code);
 CREATE INDEX IF NOT EXISTS idx_invoices_code_month ON invoices(code, month);
@@ -125,3 +137,5 @@ CREATE INDEX IF NOT EXISTS idx_chat_created_at ON chat_messages(created_at DESC)
 CREATE INDEX IF NOT EXISTS idx_news_created_at ON news(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_customer_requests_device ON customer_requests(device_id);
 CREATE INDEX IF NOT EXISTS idx_customer_requests_created ON customer_requests(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_codes_user ON user_codes(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_codes_code ON user_codes(code);
