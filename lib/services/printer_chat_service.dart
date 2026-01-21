@@ -4,9 +4,11 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:uuid/uuid.dart';
 import '../models/printer_recommendation.dart';
+import '../config/environment.dart';
 
 class PrinterChatService extends ChangeNotifier {
-  static const String baseUrl = 'http://10.0.2.2:8000/api';
+  // Use centralized environment configuration
+  static String get baseUrl => Environment.apiUrl;
 
   List<Map<String, dynamic>> _chatHistory = [];
   bool _isLoading = false;

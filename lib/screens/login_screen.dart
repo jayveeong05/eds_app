@@ -41,59 +41,92 @@ class _LoginScreenState extends State<LoginScreen> {
     Future<Map<String, dynamic>> Function() action, {
     String loginType = 'email',
   }) async {
+    debugPrint('🔐 [LOGIN] Starting authentication - Type: $loginType');
+
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
 
-    final result = await action();
+    try {
+      debugPrint('🔐 [LOGIN] Calling auth action...');
+      final result = await action();
 
-    setState(() {
-      _isLoading = false;
-    });
+      debugPrint('🔐 [LOGIN] Auth result received: $result');
+      debugPrint('🔐 [LOGIN] Result type: ${result.runtimeType}');
+      debugPrint('🔐 [LOGIN] Success key: ${result['success']}');
+      debugPrint('🔐 [LOGIN] Success type: ${result['success'].runtimeType}');
 
-    if (result['success']) {
-      // Save remember me preference
-      await _saveRememberMe(_rememberMe);
+      setState(() {
+        _isLoading = false;
+      });
 
-      if (!mounted) return;
+      if (result['success'] == true) {
+        debugPrint('🔐 [LOGIN] Authentication successful!');
 
-      final userData = result['data']['user'];
-      final status = userData['status'];
-      final isNewUser = result['data']['is_new_user'] == true;
+        // Save remember me preference
+        await _saveRememberMe(_rememberMe);
 
-      if (isNewUser && (loginType == 'google' || loginType == 'apple')) {
-        Navigator.pushNamed(
-          context,
-          '/register',
-          arguments: {
-            'signInMethod': userData['login_method'] ?? loginType,
-            'email': userData['email'],
-            'name': userData['name'] ?? '',
-          },
-        );
-      } else if (isNewUser && loginType == 'email') {
-        setState(() {
-          _errorMessage = 'Account not found. Please register first.';
-        });
-      } else if (status == 'active') {
-        Navigator.pushReplacementNamed(context, '/dashboard');
+        if (!mounted) return;
+
+        final userData = result['data']['user'];
+        debugPrint('🔐 [LOGIN] User data: $userData');
+
+        final status = userData['status'];
+        final isNewUser = result['data']['is_new_user'] == true;
+
+        debugPrint('🔐 [LOGIN] User status: $status');
+        debugPrint('🔐 [LOGIN] Is new user: $isNewUser');
+
+        if (isNewUser && (loginType == 'google' || loginType == 'apple')) {
+          debugPrint('🔐 [LOGIN] Redirecting new social user to registration');
+          Navigator.pushNamed(
+            context,
+            '/register',
+            arguments: {
+              'signInMethod': userData['login_method'] ?? loginType,
+              'email': userData['email'],
+              'name': userData['name'] ?? '',
+            },
+          );
+        } else if (isNewUser && loginType == 'email') {
+          debugPrint('🔐 [LOGIN] New email user - showing error');
+          setState(() {
+            _errorMessage = 'Account not found. Please register first.';
+          });
+        } else if (status == 'active') {
+          debugPrint('🔐 [LOGIN] Active user - redirecting to dashboard');
+          Navigator.pushReplacementNamed(context, '/dashboard');
+        } else {
+          debugPrint(
+            '🔐 [LOGIN] Inactive user - redirecting to inactive screen',
+          );
+          Navigator.pushReplacementNamed(context, '/inactive');
+        }
       } else {
-        Navigator.pushReplacementNamed(context, '/inactive');
+        debugPrint('🔐 [LOGIN] Authentication failed: ${result['message']}');
+
+        if (result['message'] != null &&
+            result['message'].toString().toLowerCase().contains(
+              'user-not-found',
+            )) {
+          setState(() {
+            _errorMessage = 'Account not found. Please register first.';
+          });
+        } else {
+          setState(() {
+            _errorMessage = result['message'] ?? 'Authentication failed';
+          });
+        }
       }
-    } else {
-      if (result['message'] != null &&
-          result['message'].toString().toLowerCase().contains(
-            'user-not-found',
-          )) {
-        setState(() {
-          _errorMessage = 'Account not found. Please register first.';
-        });
-      } else {
-        setState(() {
-          _errorMessage = result['message'] ?? 'Authentication failed';
-        });
-      }
+    } catch (e, stackTrace) {
+      debugPrint('🔐 [LOGIN] ❌ EXCEPTION: $e');
+      debugPrint('🔐 [LOGIN] Stack trace: $stackTrace');
+
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Error: $e';
+      });
     }
   }
 
@@ -128,8 +161,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    // final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF0EEE9), // Cloud Dancer
+      // backgroundColor: const Color(0xFFF0EEE9), // Cloud Dancer
+      // Inherit from theme
       body: SafeArea(
         child: Stack(
           children: [
@@ -138,7 +175,10 @@ class _LoginScreenState extends State<LoginScreen> {
               top: 16,
               left: 16,
               child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: theme.iconTheme.color, // Color(0xFF1E293B)
+                ),
                 onPressed: () => Navigator.pop(context),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -155,7 +195,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     // Main Card
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: theme.cardTheme.color, // Colors.white
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
@@ -175,7 +215,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 28,
                               fontWeight: FontWeight.bold,
-                              color: const Color(0xFF1E293B),
+                              color: theme
+                                  .colorScheme
+                                  .onSurface, // Color(0xFF1E293B)
                             ),
                           ),
                           const SizedBox(height: 32),
@@ -184,30 +226,44 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
+                            style: theme.textTheme.bodyMedium,
                             decoration: InputDecoration(
                               hintText: 'Email',
                               prefixIcon: const Icon(Icons.email_outlined),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
-                                ),
+                                borderSide:
+                                    theme
+                                        .inputDecorationTheme
+                                        .border
+                                        ?.borderSide ??
+                                    BorderSide.none,
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
-                                ),
+                                borderSide:
+                                    theme
+                                        .inputDecorationTheme
+                                        .enabledBorder
+                                        ?.borderSide ??
+                                    BorderSide(color: Colors.grey[300]!),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFF1A73E8),
-                                  width: 2,
-                                ),
+                                borderSide:
+                                    theme
+                                        .inputDecorationTheme
+                                        .focusedBorder
+                                        ?.borderSide ??
+                                    const BorderSide(
+                                      color: Color(0xFF1A73E8),
+                                      width: 2,
+                                    ),
                               ),
                               filled: true,
-                              fillColor: Colors.grey[50],
+                              fillColor: theme
+                                  .inputDecorationTheme
+                                  .fillColor, // Colors.grey[50]
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -216,6 +272,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           TextField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
+                            style: theme.textTheme.bodyMedium,
                             decoration: InputDecoration(
                               hintText: 'Password',
                               prefixIcon: const Icon(Icons.lock_outline),
@@ -233,25 +290,38 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
-                                ),
+                                borderSide:
+                                    theme
+                                        .inputDecorationTheme
+                                        .border
+                                        ?.borderSide ??
+                                    BorderSide.none,
                               ),
                               enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide(
-                                  color: Colors.grey[300]!,
-                                ),
+                                borderSide:
+                                    theme
+                                        .inputDecorationTheme
+                                        .enabledBorder
+                                        ?.borderSide ??
+                                    BorderSide(color: Colors.grey[300]!),
                               ),
                               focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(
-                                  color: Color(0xFF1A73E8),
-                                  width: 2,
-                                ),
+                                borderSide:
+                                    theme
+                                        .inputDecorationTheme
+                                        .focusedBorder
+                                        ?.borderSide ??
+                                    const BorderSide(
+                                      color: Color(0xFF1A73E8),
+                                      width: 2,
+                                    ),
                               ),
                               filled: true,
-                              fillColor: Colors.grey[50],
+                              fillColor: theme
+                                  .inputDecorationTheme
+                                  .fillColor, // Colors.grey[50]
                             ),
                           ),
                           const SizedBox(height: 16),
@@ -272,9 +342,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                           () => _rememberMe = value ?? false,
                                         );
                                       },
-                                      activeColor: Theme.of(
-                                        context,
-                                      ).colorScheme.primary, // Royal Blue
+                                      activeColor: theme
+                                          .colorScheme
+                                          .primary, // Royal Blue
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(4),
                                       ),
@@ -285,7 +355,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                     'Remember me',
                                     style: GoogleFonts.inter(
                                       fontSize: 14,
-                                      color: const Color(0xFF64748B),
+                                      color: theme.textTheme.bodyMedium?.color
+                                          ?.withOpacity(
+                                            0.7,
+                                          ), // Color(0xFF64748B)
                                     ),
                                   ),
                                 ],
@@ -302,9 +375,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   'Forgot password?',
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.primary, // Deep Slate
+                                    color:
+                                        theme.colorScheme.primary, // Deep Slate
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -372,9 +444,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                       );
                                     },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Theme.of(
-                                  context,
-                                ).colorScheme.primary, // EDS Blue
+                                backgroundColor:
+                                    theme.colorScheme.primary, // EDS Blue
                                 foregroundColor: Colors.white,
                                 elevation: 0,
                                 shape: RoundedRectangleBorder(
@@ -404,7 +475,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           // Divider
                           Row(
                             children: [
-                              Expanded(child: Divider(color: Colors.grey[300])),
+                              Expanded(
+                                child: Divider(color: theme.dividerColor),
+                              ),
                               Padding(
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
@@ -413,11 +486,14 @@ class _LoginScreenState extends State<LoginScreen> {
                                   'Or login with',
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
-                                    color: const Color(0xFF94A3B8),
+                                    color: theme.textTheme.bodyMedium?.color
+                                        ?.withOpacity(0.5), // Color(0xFF94A3B8)
                                   ),
                                 ),
                               ),
-                              Expanded(child: Divider(color: Colors.grey[300])),
+                              Expanded(
+                                child: Divider(color: theme.dividerColor),
+                              ),
                             ],
                           ),
                           const SizedBox(height: 24),
@@ -457,10 +533,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                         () => _authService.loginWithApple(),
                                         loginType: 'apple',
                                       ),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.apple,
                                   size: 28,
-                                  color: Colors.black,
+                                  color: theme
+                                      .iconTheme
+                                      .color, // Colors.black or white
                                 ),
                               ),
                             ],
@@ -476,7 +554,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   "Don't have an account? ",
                                   style: GoogleFonts.inter(
                                     fontSize: 14,
-                                    color: const Color(0xFF64748B),
+                                    color: theme.textTheme.bodyMedium?.color
+                                        ?.withOpacity(0.7), // Color(0xFF64748B)
                                   ),
                                 ),
                                 TextButton(
@@ -497,9 +576,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                     'Sign up',
                                     style: GoogleFonts.inter(
                                       fontSize: 14,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.secondary, // EDS Red
+                                      color: theme
+                                          .colorScheme
+                                          .secondary, // EDS Red
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -529,6 +608,8 @@ class _SocialButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return InkWell(
       onTap: onPressed,
       borderRadius: BorderRadius.circular(12),
@@ -536,7 +617,7 @@ class _SocialButton extends StatelessWidget {
         width: 56,
         height: 56,
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: theme.dividerColor),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(child: child),

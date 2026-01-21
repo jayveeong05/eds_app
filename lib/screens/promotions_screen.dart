@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:intl/intl.dart';
+import '../config/environment.dart';
 
 class PromotionsScreen extends StatefulWidget {
   const PromotionsScreen({super.key});
@@ -50,7 +51,7 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/get_promotions.php'),
+        Uri.parse('${Environment.apiUrl}/get_promotions.php'),
       );
 
       if (response.statusCode == 200) {

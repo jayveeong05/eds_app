@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'profile_screen.dart';
+import '../config/environment.dart';
 
 // Main navigation wrapper for inactive users
 class InactiveScreen extends StatefulWidget {
@@ -174,7 +175,7 @@ class _InactiveHomeContentState extends State<InactiveHomeContent> {
       final token = prefs.getString('token');
 
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/api/check_activation.php'),
+        Uri.parse('${Environment.apiUrl}/check_activation.php'),
         body: jsonEncode({'idToken': token}),
         headers: {'Content-Type': 'application/json'},
       );

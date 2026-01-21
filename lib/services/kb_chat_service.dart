@@ -4,9 +4,11 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/chat_message.dart';
 import '../models/chat_session.dart';
+import '../config/environment.dart';
 
 class KbChatService extends ChangeNotifier {
-  static const String baseUrl = 'http://10.0.2.2:8000/api';
+  // Use centralized environment configuration
+  static String get baseUrl => Environment.apiUrl;
 
   List<ChatMessage> _messages = [];
   List<ChatSession> _sessions = [];

@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../services/auth_service.dart';
+import '../config/environment.dart';
 
 class RegistrationScreen extends StatefulWidget {
   final String signInMethod; // 'email', 'google', or 'apple'
@@ -108,7 +109,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       if (token == null) throw Exception('Failed to get auth token');
 
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/api/verify_token.php'),
+        Uri.parse('${Environment.apiUrl}/verify_token.php'),
         body: jsonEncode({'idToken': token}),
         headers: {'Content-Type': 'application/json'},
       );
@@ -148,7 +149,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
       await _updateProfileName(token, _nameController.text.trim());
 
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/api/verify_token.php'),
+        Uri.parse('${Environment.apiUrl}/verify_token.php'),
         body: jsonEncode({'idToken': token}),
         headers: {'Content-Type': 'application/json'},
       );
@@ -171,7 +172,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   Future<void> _updateProfileName(String token, String name) async {
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:8000/api/update_profile.php'),
+      Uri.parse('${Environment.apiUrl}/update_profile.php'),
       body: jsonEncode({'idToken': token, 'name': name}),
       headers: {'Content-Type': 'application/json'},
     );
@@ -228,9 +229,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     final isEmailSignIn = widget.signInMethod == 'email';
     final isReadOnlyEmail = !isEmailSignIn;
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0EEE9), // Cloud Dancer
+      // backgroundColor: const Color(0xFFF0EEE9), // Cloud Dancer
+      // Inherit from theme
       body: SafeArea(
         child: Stack(
           children: [
@@ -239,7 +242,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               top: 16,
               left: 16,
               child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Color(0xFF1E293B)),
+                icon: Icon(
+                  Icons.arrow_back,
+                  color: theme.iconTheme.color, // Color(0xFF1E293B)
+                ),
                 onPressed: () => Navigator.pop(context),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -258,7 +264,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       // Main Card
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: theme.cardTheme.color, // Colors.white
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
@@ -278,7 +284,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               style: GoogleFonts.inter(
                                 fontSize: 28,
                                 fontWeight: FontWeight.bold,
-                                color: const Color(0xFF1E293B),
+                                color: theme
+                                    .colorScheme
+                                    .onSurface, // Color(0xFF1E293B)
                               ),
                             ),
                             const SizedBox(height: 32),
@@ -287,31 +295,46 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                             TextFormField(
                               controller: _nameController,
                               textCapitalization: TextCapitalization.words,
+                              style: theme.textTheme.bodyMedium,
                               decoration: InputDecoration(
                                 hintText: 'Full name',
                                 prefixIcon: const Icon(Icons.person_outline),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey[300]!,
-                                  ),
+                                  borderSide:
+                                      theme
+                                          .inputDecorationTheme
+                                          .border
+                                          ?.borderSide ??
+                                      BorderSide.none,
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey[300]!,
-                                  ),
+                                  borderSide:
+                                      theme
+                                          .inputDecorationTheme
+                                          .enabledBorder
+                                          ?.borderSide ??
+                                      BorderSide(color: Colors.grey[300]!),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color:
-                                        theme.colorScheme.primary, // EDS Blue
-                                    width: 2,
-                                  ),
+                                  borderSide:
+                                      theme
+                                          .inputDecorationTheme
+                                          .focusedBorder
+                                          ?.borderSide ??
+                                      BorderSide(
+                                        color: theme
+                                            .colorScheme
+                                            .primary, // EDS Blue
+                                        width: 2,
+                                      ),
                                 ),
                                 filled: true,
-                                fillColor: Colors.grey[50],
+                                fillColor: theme
+                                    .inputDecorationTheme
+                                    .fillColor, // Colors.grey[50]
                               ),
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
@@ -327,33 +350,50 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               controller: _emailController,
                               readOnly: isReadOnlyEmail,
                               keyboardType: TextInputType.emailAddress,
+                              style: theme.textTheme.bodyMedium,
                               decoration: InputDecoration(
                                 hintText: 'Email',
                                 prefixIcon: const Icon(Icons.email_outlined),
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey[300]!,
-                                  ),
+                                  borderSide:
+                                      theme
+                                          .inputDecorationTheme
+                                          .border
+                                          ?.borderSide ??
+                                      BorderSide.none,
                                 ),
                                 enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey[300]!,
-                                  ),
+                                  borderSide:
+                                      theme
+                                          .inputDecorationTheme
+                                          .enabledBorder
+                                          ?.borderSide ??
+                                      BorderSide(color: Colors.grey[300]!),
                                 ),
                                 focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
-                                  borderSide: BorderSide(
-                                    color:
-                                        theme.colorScheme.primary, // EDS Blue
-                                    width: 2,
-                                  ),
+                                  borderSide:
+                                      theme
+                                          .inputDecorationTheme
+                                          .focusedBorder
+                                          ?.borderSide ??
+                                      BorderSide(
+                                        color: theme
+                                            .colorScheme
+                                            .primary, // EDS Blue
+                                        width: 2,
+                                      ),
                                 ),
                                 filled: true,
                                 fillColor: isReadOnlyEmail
-                                    ? Colors.grey[100]
-                                    : Colors.grey[50],
+                                    ? (isDark
+                                          ? Colors.grey[800]
+                                          : Colors.grey[100])
+                                    : theme
+                                          .inputDecorationTheme
+                                          .fillColor, // Colors.grey[50]
                               ),
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
@@ -372,6 +412,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               TextFormField(
                                 controller: _passwordController,
                                 obscureText: _obscurePassword,
+                                style: theme.textTheme.bodyMedium,
                                 decoration: InputDecoration(
                                   hintText: 'Password',
                                   prefixIcon: const Icon(Icons.lock_outline),
@@ -390,26 +431,40 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                   ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: Colors.grey[300]!,
-                                    ),
+                                    borderSide:
+                                        theme
+                                            .inputDecorationTheme
+                                            .border
+                                            ?.borderSide ??
+                                        BorderSide.none,
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: Colors.grey[300]!,
-                                    ),
+                                    borderSide:
+                                        theme
+                                            .inputDecorationTheme
+                                            .enabledBorder
+                                            ?.borderSide ??
+                                        BorderSide(color: Colors.grey[300]!),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color:
-                                          theme.colorScheme.primary, // EDS Blue
-                                      width: 2,
-                                    ),
+                                    borderSide:
+                                        theme
+                                            .inputDecorationTheme
+                                            .focusedBorder
+                                            ?.borderSide ??
+                                        BorderSide(
+                                          color: theme
+                                              .colorScheme
+                                              .primary, // EDS Blue
+                                          width: 2,
+                                        ),
                                   ),
                                   filled: true,
-                                  fillColor: Colors.grey[50],
+                                  fillColor: theme
+                                      .inputDecorationTheme
+                                      .fillColor, // Colors.grey[50]
                                 ),
                                 validator: (value) {
                                   if (value == null || value.isEmpty) {
@@ -427,6 +482,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               TextFormField(
                                 controller: _confirmPasswordController,
                                 obscureText: _obscureConfirmPassword,
+                                style: theme.textTheme.bodyMedium,
                                 decoration: InputDecoration(
                                   hintText: 'Confirm Password',
                                   prefixIcon: const Icon(Icons.lock_outline),
@@ -445,26 +501,40 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                   ),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: Colors.grey[300]!,
-                                    ),
+                                    borderSide:
+                                        theme
+                                            .inputDecorationTheme
+                                            .border
+                                            ?.borderSide ??
+                                        BorderSide.none,
                                   ),
                                   enabledBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color: Colors.grey[300]!,
-                                    ),
+                                    borderSide:
+                                        theme
+                                            .inputDecorationTheme
+                                            .enabledBorder
+                                            ?.borderSide ??
+                                        BorderSide(color: Colors.grey[300]!),
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide(
-                                      color:
-                                          theme.colorScheme.primary, // EDS Blue
-                                      width: 2,
-                                    ),
+                                    borderSide:
+                                        theme
+                                            .inputDecorationTheme
+                                            .focusedBorder
+                                            ?.borderSide ??
+                                        BorderSide(
+                                          color: theme
+                                              .colorScheme
+                                              .primary, // EDS Blue
+                                          width: 2,
+                                        ),
                                   ),
                                   filled: true,
-                                  fillColor: Colors.grey[50],
+                                  fillColor: theme
+                                      .inputDecorationTheme
+                                      .fillColor, // Colors.grey[50]
                                 ),
                                 validator: (value) {
                                   if (value != _passwordController.text) {
@@ -503,7 +573,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                     'By continuing you agree with our Term and Privacy Policy',
                                     style: GoogleFonts.inter(
                                       fontSize: 12,
-                                      color: const Color(0xFF64748B),
+                                      color: theme.textTheme.bodySmall?.color
+                                          ?.withOpacity(
+                                            0.8,
+                                          ), // Color(0xFF64748B)
                                     ),
                                   ),
                                 ),
@@ -552,7 +625,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                             Row(
                               children: [
                                 Expanded(
-                                  child: Divider(color: Colors.grey[300]),
+                                  child: Divider(color: theme.dividerColor),
                                 ),
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
@@ -562,12 +635,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                     'Or sign up with',
                                     style: GoogleFonts.inter(
                                       fontSize: 14,
-                                      color: const Color(0xFF94A3B8),
+                                      color: theme.textTheme.bodyMedium?.color
+                                          ?.withOpacity(
+                                            0.5,
+                                          ), // Color(0xFF94A3B8)
                                     ),
                                   ),
                                 ),
                                 Expanded(
-                                  child: Divider(color: Colors.grey[300]),
+                                  child: Divider(color: theme.dividerColor),
                                 ),
                               ],
                             ),
@@ -608,10 +684,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                           () => _authService.loginWithApple(),
                                           'apple',
                                         ),
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.apple,
                                     size: 28,
-                                    color: Colors.black,
+                                    color:
+                                        theme.iconTheme.color, // Colors.black
                                   ),
                                 ),
                               ],
@@ -627,7 +704,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                     'Already have an account? ',
                                     style: GoogleFonts.inter(
                                       fontSize: 14,
-                                      color: const Color(0xFF64748B),
+                                      color: theme.textTheme.bodyMedium?.color
+                                          ?.withOpacity(
+                                            0.7,
+                                          ), // Color(0xFF64748B)
                                     ),
                                   ),
                                   TextButton(
@@ -677,6 +757,8 @@ class _SocialButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return InkWell(
       onTap: onPressed,
       borderRadius: BorderRadius.circular(12),
@@ -684,7 +766,7 @@ class _SocialButton extends StatelessWidget {
         width: 56,
         height: 56,
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: theme.dividerColor),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Center(child: child),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'pdf_viewer_screen.dart';
+import '../config/environment.dart';
 
 class CodeDetailScreen extends StatefulWidget {
   final String machineCode;
@@ -31,7 +32,7 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/api/get_code_invoices.php'),
+        Uri.parse('${Environment.apiUrl}/get_code_invoices.php'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'code': widget.machineCode}),
       );

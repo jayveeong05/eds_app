@@ -7,6 +7,7 @@ import '../services/news_service.dart';
 import 'code_detail_screen.dart';
 import 'news_detail_screen.dart';
 import 'printer_matcher_screen.dart';
+import '../config/environment.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -102,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/get_machine_codes.php'),
+        Uri.parse('${Environment.apiUrl}/get_machine_codes.php'),
       );
 
       if (response.statusCode == 200) {

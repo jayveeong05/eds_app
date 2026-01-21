@@ -1,13 +1,11 @@
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../config/environment.dart';
 
 class UploadService {
-  // Update this to match your backend URL
-  // For Android emulator: http://10.0.2.2:8000
-  // For iOS simulator: http://localhost:8000
-  // For web: http://localhost:8000
-  static const String baseUrl = 'http://10.0.2.2:8000';
+  // Use centralized environment configuration
+  static String get baseUrl => Environment.baseUrl;
 
   /// Upload image to S3 via backend API
   /// Returns the S3 URL on success, null on failure

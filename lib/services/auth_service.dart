@@ -4,20 +4,19 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart';
+import '../config/environment.dart';
 
 class AuthService {
-  // Replace with your actual local IP or localhost.
-  // For Android Emulator -> 10.0.2.2
-  // For iOS Simulator -> localhost
-  // For Web -> localhost
-  static const String baseUrl = 'http://10.0.2.2:8000/api';
-
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn(
-    // Use the web client ID from google-services.json
+    scopes: ['email', 'profile'],
     serverClientId:
         '937666435898-iluqu91pjhkkhi1pimouvq7j8un180vi.apps.googleusercontent.com',
   );
+
+  // Get current user
+  User? get currentUser => _auth.currentUser;
 
   // Helper to sync with backend
   Future<Map<String, dynamic>> _syncWithBackend(
@@ -25,40 +24,63 @@ class AuthService {
     String loginMethod,
   ) async {
     try {
-      final idToken = await user.getIdToken();
+      debugPrint('🔄 [SYNC] Starting backend sync - Method: $loginMethod');
 
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/verify_token.php'),
-            body: jsonEncode({
-              'idToken': idToken,
-              'uid': user.uid,
-              'email': user.email,
-              'loginMethod': loginMethod,
-            }),
-            headers: {'Content-Type': 'application/json'},
-          )
-          .timeout(
-            const Duration(seconds: 10),
-            onTimeout: () {
-              throw Exception(
-                'Backend request timed out - server may not be accessible from emulator',
-              );
-            },
-          );
+      final idToken = await user.getIdToken();
+      debugPrint('🔄 [SYNC] Got ID token: ${idToken?.substring(0, 20)}...');
+
+      if (idToken == null) {
+        debugPrint('🔄 [SYNC] ❌ No ID token available');
+        return {
+          'success': false,
+          'message': 'Failed to get authentication token',
+        };
+      }
+
+      debugPrint(
+        '🔄 [SYNC] Sending request to: ${Environment.apiUrl}/verify_token.php',
+      );
+      final response = await http.post(
+        Uri.parse('${Environment.apiUrl}/verify_token.php'),
+        body: jsonEncode({'idToken': idToken, 'signInMethod': loginMethod}),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      debugPrint('🔄 [SYNC] Response status: ${response.statusCode}');
+      debugPrint('🔄 [SYNC] Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        await saveSession(data, idToken!, loginMethod); // Save backend status
-        return {'success': true, 'data': data};
+        debugPrint('🔄 [SYNC] Decoded data: $data');
+        debugPrint('🔄 [SYNC] Data type: ${data.runtimeType}');
+        debugPrint('🔄 [SYNC] Success value: ${data['success']}');
+        debugPrint('🔄 [SYNC] Success type: ${data['success'].runtimeType}');
+
+        if (data['success'] == true) {
+          debugPrint('🔄 [SYNC] ✅ Backend verification successful');
+
+          // Store login method in SharedPreferences
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('login_method', loginMethod);
+          await saveSession(data, idToken, loginMethod); // Save backend status
+          return {'success': true, 'data': data};
+        } else {
+          debugPrint(
+            '🔄 [SYNC] ❌ Backend verification failed: ${data['message']}',
+          );
+          return {
+            'success': false,
+            'message': data['message'] ?? 'Verification failed',
+          };
+        }
       } else {
-        return {
-          'success': false,
-          'message': 'Backend sync failed: ${response.body}',
-        };
+        debugPrint('🔄 [SYNC] ❌ Server error: ${response.statusCode}');
+        return {'success': false, 'message': 'Server error'};
       }
-    } catch (e) {
-      return {'success': false, 'message': 'Sync error: $e'};
+    } catch (e, stackTrace) {
+      debugPrint('🔄 [SYNC] ❌ EXCEPTION: $e');
+      debugPrint('🔄 [SYNC] Stack trace: $stackTrace');
+      return {'success': false, 'message': 'Error: $e'};
     }
   }
 
@@ -67,12 +89,20 @@ class AuthService {
     String password,
   ) async {
     try {
+      debugPrint('📧 [EMAIL_LOGIN] Attempting login: $email');
+
       final UserCredential userCredential = await _auth
           .signInWithEmailAndPassword(email: email, password: password);
+
+      debugPrint(
+        '📧 [EMAIL_LOGIN] Firebase auth successful, syncing with backend...',
+      );
       return await _syncWithBackend(userCredential.user!, 'email');
     } on FirebaseAuthException catch (e) {
+      debugPrint('📧 [EMAIL_LOGIN] ❌ Firebase error: ${e.code} - ${e.message}');
       return {'success': false, 'message': e.message};
     } catch (e) {
+      debugPrint('📧 [EMAIL_LOGIN] ❌ Exception: $e');
       return {'success': false, 'message': 'Error: $e'};
     }
   }
@@ -94,18 +124,31 @@ class AuthService {
 
   Future<Map<String, dynamic>> loginWithGoogle() async {
     try {
+      // Sign in with Google
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
         return {'success': false, 'message': 'Google Sign In cancelled'};
       }
 
+      // Get authentication credentials
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
+
+      // Check if we have valid tokens
+      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
+        return {
+          'success': false,
+          'message': 'Failed to get Google credentials',
+        };
+      }
+
+      // Create Firebase credential
       final AuthCredential credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+        accessToken: googleAuth.accessToken!,
+        idToken: googleAuth.idToken!,
       );
 
+      // Sign in to Firebase
       final UserCredential userCredential = await _auth.signInWithCredential(
         credential,
       );

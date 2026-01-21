@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
+import '../config/environment.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -42,7 +43,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/get_promotions.php?limit=3'),
+        Uri.parse('${Environment.apiUrl}/get_promotions.php?limit=3'),
       );
 
       if (response.statusCode == 200) {

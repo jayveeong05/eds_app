@@ -21,11 +21,30 @@ class PrinterRecommendation {
       score = int.tryParse(scoreStr) ?? 0;
     }
 
+    // Parse and validate product URL
+    String productUrl = json['product_url'] ?? '';
+    // Normalize invalid URLs (like "-", "null", empty) to empty string
+    if (productUrl == '-' ||
+        productUrl.toLowerCase() == 'null' ||
+        productUrl.trim().isEmpty) {
+      productUrl = '';
+    } else {
+      // Validate that the URL has a proper scheme
+      try {
+        final uri = Uri.parse(productUrl);
+        if (!uri.hasScheme || (uri.scheme != 'http' && uri.scheme != 'https')) {
+          productUrl = '';
+        }
+      } catch (e) {
+        productUrl = '';
+      }
+    }
+
     return PrinterRecommendation(
       model: json['model'] ?? '',
       score: score,
       reason: json['reason'] ?? '',
-      productUrl: json['product_url'] ?? '',
+      productUrl: productUrl,
     );
   }
 

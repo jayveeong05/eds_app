@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'code_detail_screen.dart';
+import '../config/environment.dart';
 
 class InvoicesScreen extends StatefulWidget {
   const InvoicesScreen({super.key});
@@ -29,7 +30,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/get_machine_codes.php'),
+        Uri.parse('${Environment.apiUrl}/get_machine_codes.php'),
       );
 
       if (response.statusCode == 200) {

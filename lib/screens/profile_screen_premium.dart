@@ -6,10 +6,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
 import '../services/upload_service.dart';
-import '../providers/theme_provider.dart';
 import '../config/environment.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -68,13 +66,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
-      final token = await AuthService().getValidToken();
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
 
       if (token == null) {
-        throw Exception('Not authenticated');
+        setState(() {
+          _errorMessage = 'No authentication token';
+          _isLoading = false;
+        });
+        return;
       }
-
-      debugPrint('Calling profile API: ${Environment.apiUrl}/get_profile.php');
 
       final response = await http.post(
         Uri.parse('${Environment.apiUrl}/get_profile.php'),
@@ -82,24 +83,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         headers: {'Content-Type': 'application/json'},
       );
 
-      debugPrint('Profile response status: ${response.statusCode}');
-      debugPrint('Profile response body: ${response.body}');
-
       if (response.statusCode == 200) {
-        if (response.body.isEmpty) {
-          throw Exception('Empty response from server');
-        }
-
         final data = jsonDecode(response.body);
-
-        if (data == null) {
-          throw Exception('Null response data');
-        }
-
-        if (data['user'] == null) {
-          throw Exception('User data is null');
-        }
-
         setState(() {
           _userProfile = data['user'];
           _nameController.text = _userProfile['name'] ?? '';
@@ -107,12 +92,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         });
       } else {
         setState(() {
-          _errorMessage = 'Failed to load profile (${response.statusCode})';
+          _errorMessage = 'Failed to load profile';
           _isLoading = false;
         });
       }
     } catch (e) {
-      debugPrint('Profile load error: $e');
       setState(() {
         _errorMessage = 'Error: $e';
         _isLoading = false;
@@ -121,19 +105,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _saveProfile() async {
-    if (!mounted) return;
-
     setState(() {
       _isSaving = true;
       _errorMessage = '';
     });
 
     try {
-      final token = await AuthService().getValidToken();
-
-      if (token == null) {
-        throw Exception('Not authenticated');
-      }
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
 
       final response = await http.post(
         Uri.parse('${Environment.apiUrl}/update_profile.php'),
@@ -145,35 +124,29 @@ class _ProfileScreenState extends State<ProfileScreen> {
         headers: {'Content-Type': 'application/json'},
       );
 
-      if (!mounted) return;
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+        setState(() {
+          _userProfile = data['user'];
+          _isEditingName = false;
+          _isSaving = false;
+        });
         if (mounted) {
-          setState(() {
-            _userProfile = data['user'];
-            _isEditingName = false;
-            _isSaving = false;
-          });
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profile updated successfully')),
           );
         }
       } else {
-        if (mounted) {
-          setState(() {
-            _errorMessage = 'Failed to update profile';
-            _isSaving = false;
-          });
-        }
-      }
-    } catch (e) {
-      if (mounted) {
         setState(() {
-          _errorMessage = 'Error: $e';
+          _errorMessage = 'Failed to update profile';
           _isSaving = false;
         });
       }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'Error: $e';
+        _isSaving = false;
+      });
     }
   }
 
@@ -263,11 +236,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _updateProfileImage(String imageUrl) async {
     try {
-      final token = await AuthService().getValidToken();
-
-      if (token == null) {
-        throw Exception('Not authenticated');
-      }
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
 
       final response = await http.post(
         Uri.parse('${Environment.apiUrl}/update_profile.php'),
@@ -410,15 +380,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final primaryColor = theme.colorScheme.primary;
-    final onSurface = theme.colorScheme.onSurface;
-
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
+      backgroundColor: const Color(0xFFF0EEE9), // Cloud Dancer background
       body: SafeArea(
         child: _isLoading
-            ? Center(child: CircularProgressIndicator(color: primaryColor))
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: Color(0xFF2C3E50),
+                ), // Deep Slate
+              )
             : _errorMessage.isNotEmpty
             ? Center(
                 child: Column(
@@ -432,7 +402,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ElevatedButton(
                       onPressed: _loadProfile,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: primaryColor,
+                        backgroundColor: const Color(0xFF2C3E50), // Deep Slate
                         foregroundColor: Colors.white,
                       ),
                       child: const Text('Retry'),
@@ -460,13 +430,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   // PREMIUM HEADER SECTION WITH GRADIENT
                   Container(
                     width: double.infinity,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          theme.scaffoldBackgroundColor, // Cloud Dancer
-                          theme.scaffoldBackgroundColor,
+                          Color(0xFFE8E6E1), // Darker Cloud Dancer shade
+                          Color(0xFFF0EEE9), // Cloud Dancer
                         ],
                       ),
                     ),
@@ -481,9 +451,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         // Profile Title - 24sp Bold
                         Text(
                           'Profile',
-                          style: theme.textTheme.headlineMedium?.copyWith(
+                          style: GoogleFonts.inter(
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: onSurface,
+                            color: const Color(0xFF1E293B),
                           ),
                         ),
                         const SizedBox(height: 24),
@@ -533,12 +504,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ),
                                       child: CircleAvatar(
                                         radius: 60,
-                                        backgroundColor: primaryColor
-                                            .withOpacity(0.1),
-                                        child: Icon(
+                                        backgroundColor: const Color(
+                                          0xFF2C3E50, // Deep Slate
+                                        ).withOpacity(0.1),
+                                        child: const Icon(
                                           Icons.person,
                                           size: 50,
-                                          color: primaryColor,
+                                          color: Color(0xFF8A9A5B), // Soft Sage
                                         ),
                                       ),
                                     ),
@@ -566,7 +538,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   child: Container(
                                     padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      color: primaryColor, // EDS Blue
+                                      color: const Color(
+                                        0xFF8A9A5B,
+                                      ), // Soft Sage
                                       shape: BoxShape.circle,
                                       border: Border.all(
                                         color: Colors.white,
@@ -574,7 +548,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: primaryColor.withOpacity(0.3),
+                                          color: const Color(
+                                            0xFF2C3E50, // Deep Slate
+                                          ).withOpacity(0.3),
                                           blurRadius: 8,
                                           offset: const Offset(0, 2),
                                         ),
@@ -610,7 +586,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           // CONSOLIDATED ACCOUNT SETTINGS CARD
                           Container(
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.surface,
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(24),
                               boxShadow: [
                                 BoxShadow(
@@ -631,7 +607,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     style: GoogleFonts.inter(
                                       fontSize: 18,
                                       fontWeight: FontWeight.w600,
-                                      color: onSurface.withOpacity(0.8),
+                                      color: const Color(0xFF334155),
                                     ),
                                   ),
                                 ),
@@ -654,7 +630,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           style: GoogleFonts.inter(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w500,
-                                            color: onSurface.withOpacity(0.6),
+                                            color: const Color(0xFF64748B),
                                           ),
                                         ),
                                       ),
@@ -666,7 +642,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                 style: GoogleFonts.inter(
                                                   fontSize: 15,
                                                   fontWeight: FontWeight.w500,
-                                                  color: onSurface,
+                                                  color: const Color(
+                                                    0xFF1E293B,
+                                                  ),
                                                 ),
                                                 decoration: InputDecoration(
                                                   border: OutlineInputBorder(
@@ -690,7 +668,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                 style: GoogleFonts.inter(
                                                   fontSize: 15,
                                                   fontWeight: FontWeight.w500,
-                                                  color: onSurface,
+                                                  color: const Color(
+                                                    0xFF1E293B,
+                                                  ),
                                                 ),
                                               ),
                                       ),
@@ -710,9 +690,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                         child: Container(
                                           padding: const EdgeInsets.all(8),
                                           decoration: BoxDecoration(
-                                            color: primaryColor.withOpacity(
-                                              0.1,
-                                            ),
+                                            color: const Color(
+                                              0xFF2C3E50, // Deep Slate
+                                            ).withOpacity(0.1),
                                             borderRadius: BorderRadius.circular(
                                               8,
                                             ),
@@ -721,7 +701,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             _isEditingName
                                                 ? Icons.check
                                                 : Icons.edit,
-                                            color: primaryColor,
+                                            color: const Color(
+                                              0xFF8A9A5B,
+                                            ), // Soft Sage
                                             size: 18,
                                           ),
                                         ),
@@ -746,7 +728,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           style: GoogleFonts.inter(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w500,
-                                            color: onSurface.withOpacity(0.6),
+                                            color: const Color(0xFF64748B),
                                           ),
                                         ),
                                       ),
@@ -757,7 +739,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           style: GoogleFonts.inter(
                                             fontSize: 15,
                                             fontWeight: FontWeight.w500,
-                                            color: onSurface,
+                                            color: const Color(0xFF1E293B),
                                           ),
                                         ),
                                       ),
@@ -766,7 +748,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                                 const Divider(height: 1),
 
-                                // Status Row
+                                // Status Row with Emerald Green Badge
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 24,
@@ -781,7 +763,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           style: GoogleFonts.inter(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w500,
-                                            color: onSurface.withOpacity(0.6),
+                                            color: const Color(0xFF64748B),
                                           ),
                                         ),
                                       ),
@@ -798,7 +780,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                               ? const Color(
                                                   0xFF10B981,
                                                 ) // Emerald Green
-                                              : onSurface.withOpacity(0.4),
+                                              : const Color(0xFF9CA3AF),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
@@ -836,7 +818,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             style: GoogleFonts.inter(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w500,
-                                              color: onSurface.withOpacity(0.6),
+                                              color: const Color(0xFF64748B),
                                             ),
                                           ),
                                         ),
@@ -847,7 +829,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                             vertical: 6,
                                           ),
                                           decoration: BoxDecoration(
-                                            color: primaryColor,
+                                            color: const Color(0xFF8B5CF6),
                                             borderRadius: BorderRadius.circular(
                                               12,
                                             ),
@@ -868,7 +850,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ],
                                 const Divider(height: 1),
 
-                                // Login Method Row
+                                // Login Method Row with Neutral Gray Badge
                                 Padding(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 24,
@@ -883,7 +865,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           style: GoogleFonts.inter(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w500,
-                                            color: onSurface.withOpacity(0.6),
+                                            color: const Color(0xFF64748B),
                                           ),
                                         ),
                                       ),
@@ -894,7 +876,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                           vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: onSurface.withOpacity(0.4),
+                                          color: const Color(0xFF94A3B8),
                                           borderRadius: BorderRadius.circular(
                                             12,
                                           ),
@@ -917,48 +899,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ],
                                   ),
                                 ),
-                                const Divider(height: 1),
-
-                                // Dark Mode Toggle Row
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 24,
-                                    vertical: 20,
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      SizedBox(
-                                        width: 90,
-                                        child: Text(
-                                          'Dark Mode',
-                                          style: GoogleFonts.inter(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w500,
-                                            color: onSurface.withOpacity(0.6),
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 20),
-                                      Expanded(
-                                        child: Consumer<ThemeProvider>(
-                                          builder: (context, themeProvider, _) {
-                                            return Switch(
-                                              value: themeProvider.isDarkMode,
-                                              onChanged: (value) {
-                                                themeProvider.setThemeMode(
-                                                  value
-                                                      ? ThemeMode.dark
-                                                      : ThemeMode.light,
-                                                );
-                                              },
-                                              activeColor: primaryColor,
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
 
                                 // Change Password Section (if email login)
                                 if (_loginMethod == 'email') ...[
@@ -968,16 +908,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                       horizontal: 24,
                                       vertical: 8,
                                     ),
-                                    leading: Icon(
+                                    leading: const Icon(
                                       Icons.lock_outline,
-                                      color: onSurface.withOpacity(0.6),
+                                      color: Color(0xFF64748B),
                                     ),
                                     title: Text(
                                       'Change Password',
                                       style: GoogleFonts.inter(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
-                                        color: onSurface.withOpacity(0.8),
+                                        color: const Color(0xFF334155),
                                       ),
                                     ),
                                     children: [
@@ -1084,7 +1024,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                     ? null
                                                     : _changePassword,
                                                 style: ElevatedButton.styleFrom(
-                                                  backgroundColor: primaryColor,
+                                                  backgroundColor: const Color(
+                                                    0xFF2C3E50, // Deep Slate
+                                                  ),
                                                   foregroundColor: Colors.white,
                                                   padding:
                                                       const EdgeInsets.symmetric(
@@ -1132,17 +1074,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     child: Container(
                                       padding: const EdgeInsets.all(16),
                                       decoration: BoxDecoration(
-                                        color: primaryColor.withOpacity(0.05),
+                                        color: const Color(0xFFDFEEFF),
                                         borderRadius: BorderRadius.circular(12),
                                         border: Border.all(
-                                          color: primaryColor.withOpacity(0.3),
+                                          color: const Color(0xFF93C5FD),
                                         ),
                                       ),
                                       child: Row(
                                         children: [
-                                          Icon(
+                                          const Icon(
                                             Icons.info_outline,
-                                            color: primaryColor,
+                                            color: Color(0xFF1E40AF),
                                             size: 20,
                                           ),
                                           const SizedBox(width: 12),
@@ -1154,7 +1096,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                                   ? 'Apple'
                                                   : 'external provider'}. Update your password via your account provider.',
                                               style: GoogleFonts.inter(
-                                                color: primaryColor,
+                                                color: const Color(0xFF1E40AF),
                                                 fontSize: 13,
                                               ),
                                             ),
@@ -1169,40 +1111,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(height: 24),
 
-                          // LOGOUT BUTTON SECTION
+                          // LOGOUT BUTTON SECTION - Outlined Red
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton.icon(
                               onPressed: () async {
-                                try {
-                                  debugPrint('Logout button pressed');
-                                  await AuthService().logout();
-                                  debugPrint(
-                                    'Logout successful, navigating to login',
+                                await AuthService().logout();
+                                if (context.mounted) {
+                                  Navigator.pushReplacementNamed(
+                                    context,
+                                    '/login',
                                   );
-
-                                  if (!context.mounted) {
-                                    debugPrint(
-                                      'Context not mounted, cannot navigate',
-                                    );
-                                    return;
-                                  }
-
-                                  Navigator.of(context).pushNamedAndRemoveUntil(
-                                    '/landing',
-                                    (route) => false,
-                                  );
-                                  Navigator.of(context).pushNamed('/login');
-                                } catch (e) {
-                                  debugPrint('Logout error: $e');
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Logout failed: $e'),
-                                        backgroundColor: Colors.red,
-                                      ),
-                                    );
-                                  }
                                 }
                               },
                               icon: const Icon(Icons.logout),
@@ -1214,9 +1133,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 ),
                               ),
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: theme.colorScheme.secondary,
-                                side: BorderSide(
-                                  color: theme.colorScheme.secondary,
+                                foregroundColor: const Color(
+                                  0xFFDC2626,
+                                ), // Softer coral red
+                                side: const BorderSide(
+                                  color: Color(0xFFDC2626),
                                   width: 1.5,
                                 ),
                                 padding: const EdgeInsets.symmetric(
@@ -1237,7 +1158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               'Member since ${_formatMemberSince(_userProfile['created_at'])}',
                               style: GoogleFonts.inter(
                                 fontSize: 12,
-                                color: onSurface.withOpacity(0.5),
+                                color: const Color(0xFF94A3B8),
                               ),
                             ),
                           ),

@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config/environment.dart';
 import '../models/news.dart';
 
 class NewsService {
-  // Use the same base URL as other services (Android emulator localhost)
-  static const String baseUrl = 'http://10.0.2.2:8000/api';
+  // Use centralized environment configuration
+  static String get baseUrl => Environment.apiUrl;
 
   /// Fetch news from the backend API
   /// Returns a list of News objects ordered by newest first

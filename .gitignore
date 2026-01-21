@@ -57,3 +57,61 @@ ios/Runner/GoogleService-Info.plist
 android/app/google-services.json
 backend/lib/google_keys.json
 
+.vercel
+.env
+.env*.local
+
+# Development and testing scripts
+*.test.php
+router_dev.php
+fix_*.dart
+fix_*.php
+add_*.dart
+update_*.php
+test.php
+
+# Backend testing utilities
+backend/test_connection.php
+backend/check_tables.php
+
+# User uploads and data
+backend/uploads/
+
+# Firebase cache
+.firebase/
+
+# Agent/AI assistant files
+.agent/
+
+# Android build outputs
+android/build/
+
+# Documentation with potentially sensitive info
+COMPLETE_HANDOFF_PACKAGE.md
+backend/PRINTER_MATCHER_CONFIG.md
+
+# Docker
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# Backend API (Vercel serverless)
+api/
+public/router_dev.php
+src/
+
+# Additional config
+.htaccess
+.vercelignore
+
+# Config files with secrets (block these)
+config/ai_config.php
+config/s3_config.php
+
+# Duplicate library directory (should not be in lib/)
+lib/lib/
+
+# Outdated documentation
+MOBILE_OVERVIEW.md
+COMPLETE_HANDOFF_PACKAGE.md
+backend/PRINTER_MATCHER_CONFIG.md

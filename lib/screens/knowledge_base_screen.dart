@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'pdf_viewer_screen.dart';
 import 'knowledge_base_chat_screen.dart';
+import '../config/environment.dart';
 
 class KnowledgeBaseScreen extends StatefulWidget {
   const KnowledgeBaseScreen({super.key});
@@ -37,7 +38,7 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/get_knowledge_base.php'),
+        Uri.parse('${Environment.apiUrl}/get_knowledge_base.php'),
       );
 
       if (response.statusCode == 200) {
@@ -107,7 +108,7 @@ class _KnowledgeBaseScreenState extends State<KnowledgeBaseScreen> {
   Future<String?> _getPresignedUrl(String s3Key) async {
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/api/get_presigned_url.php'),
+        Uri.parse('${Environment.apiUrl}/get_presigned_url.php'),
         body: {'s3_key': s3Key},
       );
 

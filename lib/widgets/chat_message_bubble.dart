@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../models/chat_message.dart';
 import '../screens/pdf_viewer_screen.dart';
+import '../config/environment.dart';
 
 class ChatMessageBubble extends StatelessWidget {
   final ChatMessage message;
@@ -280,7 +281,7 @@ class ChatMessageBubble extends StatelessWidget {
       debugPrint('Opening PDF - S3 Key: $s3Key');
 
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/api/get_presigned_url.php'),
+        Uri.parse('${Environment.apiUrl}/get_presigned_url.php'),
         body: {'s3_key': s3Key},
       );
 
