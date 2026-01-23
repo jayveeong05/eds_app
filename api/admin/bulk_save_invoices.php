@@ -43,7 +43,6 @@ try {
     $successCount = 0;
     $updatedCount = 0;
     $failedFiles = [];
-    $assignedCodes = []; // Track unique codes for user assignment
     
     // Parse each filename and insert/update in database
     foreach ($data->s3Keys as $s3Key) {
@@ -56,11 +55,6 @@ try {
                 'reason' => 'Invalid filename format (expected: AA001001-Jan.pdf)'
             ];
             continue;
-        }
-        
-        // Track unique code for user assignment
-        if (!in_array($parsed['code'], $assignedCodes)) {
-            $assignedCodes[] = $parsed['code'];
         }
         
         // Check if record exists for this code+month
@@ -96,42 +90,6 @@ try {
         }
     }
     
-    // Assign codes to user if userId is provided
-    $assignedTo = null;
-    if (isset($data->userId) && !empty($data->userId)) {
-        $userId = $data->userId;
-        
-        // Get user info for confirmation
-        $userQuery = "SELECT name, email FROM users WHERE id = :user_id LIMIT 1";
-        $userStmt = $db->prepare($userQuery);
-        $userStmt->bindParam(':user_id', $userId);
-        $userStmt->execute();
-        $targetUser = $userStmt->fetch(PDO::FETCH_ASSOC);
-        
-        if ($targetUser && count($assignedCodes) > 0) {
-            // Insert or update user_codes entries
-            $assignQuery = "INSERT INTO user_codes (user_id, code, assigned_at) 
-                           VALUES (:user_id, :code, CURRENT_TIMESTAMP)
-                           ON CONFLICT (user_id, code) DO UPDATE 
-                           SET assigned_at = CURRENT_TIMESTAMP";
-            
-            $assignStmt = $db->prepare($assignQuery);
-            foreach ($assignedCodes as $code) {
-                $assignStmt->bindParam(':user_id', $userId);
-                $assignStmt->bindParam(':code', $code);
-                $assignStmt->execute();
-            }
-            
-            $assignedTo = [
-                'user_name' => $targetUser['name'],
-                'user_email' => $targetUser['email'],
-                'codes' => $assignedCodes,
-                'code_count' => count($assignedCodes)
-            ];
-        }
-    }
-    
-    
     http_response_code(200);
     $response = [
         'success' => true,
@@ -140,12 +98,6 @@ try {
         'failedFiles' => $failedFiles,
         'message' => 'Uploaded invoices replace previous data for same code+month'
     ];
-    
-    // Add assignment info if user was assigned
-    if ($assignedTo !== null) {
-        $response['assignedTo'] = $assignedTo;
-        $response['message'] .= ' | Codes assigned to ' . $assignedTo['user_name'];
-    }
     
     echo json_encode($response);
     

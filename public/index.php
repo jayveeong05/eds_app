@@ -93,6 +93,10 @@ $router->add('POST', '/api/admin/delete_news.php', 'AdminApiController@deleteNew
 $router->add('POST', '/api/admin/get_printer_requests.php', 'AdminApiController@getPrinterRequests');
 $router->add('POST', '/api/admin/upload_printer_kb.php', 'AdminApiController@uploadPrinterKb');
 $router->add('POST', '/api/admin/bulk_save_invoices.php', 'AdminApiController@bulkSaveInvoices');
+$router->add('POST', '/api/admin/get_all_machine_codes.php', 'AdminApiController@getAllMachineCodes');
+$router->add('POST', '/api/admin/get_user_machine_codes.php', 'AdminApiController@getUserMachineCodes');
+$router->add('POST', '/api/admin/add_user_machine_code.php', 'AdminApiController@addUserMachineCode');
+$router->add('POST', '/api/admin/delete_user_machine_code.php', 'AdminApiController@deleteUserMachineCode');
 $router->add('GET', '/api/admin/get_user_details.php', 'AdminApiController@getUserDetails');
 $router->add('GET', '/api/admin/get_token.php', 'AdminApiController@getToken');
 

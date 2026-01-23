@@ -78,7 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // For all other admin pages, require authentication
-    if (path.startsWith('/admin/')) {
+    if (window.location.pathname.startsWith('/admin/')) {
         AdminAuth.requireAuth();
     }
 });

@@ -30,17 +30,6 @@ $currentPage = 'invoices';
             <div id="fileCount" class="mt-2 text-muted"></div>
         </div>
         
-        <!-- Step 1.5: Select User for Assignment -->
-        <div class="mb-4">
-            <h6 class="text-eds-primary"><strong>Step 1.5:</strong> Assign to User</h6>
-            <select class="form-select" id="userSelect">
-                <option value="">Loading users...</option>
-            </select>
-            <small class="text-muted">
-                These invoices will be assigned to the selected user. Users can only see their assigned invoices in the mobile app.
-            </small>
-        </div>
-        
         <!-- Step 2: Upload to S3 -->
         <div class="mb-4">
             <h6 class="text-eds-primary"><strong>Step 2:</strong> Upload to S3</h6>
@@ -96,39 +85,6 @@ $currentPage = 'invoices';
 
 <script>
 let uploadedKeys = [];
-let allUsers = [];
-
-// Fetch users for assignment on page load
-async function fetchUsers() {
-    try {
-        const data = await apiRequest(ADMIN_API_BASE + '/get_all_users.php', {
-            body: {}
-        });
-        
-        if (data.success) {
-            allUsers = data.data;
-            const userSelect = document.getElementById('userSelect');
-            
-            // Clear and populate dropdown
-            userSelect.innerHTML = '<option value="">Select a user (optional)</option>';
-            allUsers.forEach(user => {
-                const option = document.createElement('option');
-                option.value = user.id;
-                option.textContent = `${user.name} (${user.email})`;
-                userSelect.appendChild(option);
-            });
-        } else {
-            showToast('Failed to load users: ' + data.message, 'warning');
-        }
-    } catch (error) {
-        console.error('Failed to fetch users:', error);
-        showToast('Failed to load users', 'warning');
-    }
-}
-
-// Load users when page loads
-document.addEventListener('DOMContentLoaded', fetchUsers);
-
 
 // Month abbreviation mapping (must match InvoiceParser.php)
 const VALID_MONTHS = {
@@ -262,19 +218,11 @@ async function parseAndSave() {
         return;
     }
     
-    // Get selected user
-    const selectedUserId = document.getElementById('userSelect').value;
-    
     document.getElementById('saveBtn').disabled = true;
     showLoading();
     
     try {
         const requestBody = { s3Keys: uploadedKeys };
-        
-        // Add userId if selected
-        if (selectedUserId) {
-            requestBody.userId = selectedUserId;
-        }
         
         const data = await apiRequest(ADMIN_API_BASE + '/bulk_save_invoices.php', {
             body: requestBody
@@ -287,16 +235,7 @@ async function parseAndSave() {
                     <h6 class="alert-heading">✅ Database Save Complete</h6>
                     <ul class="mb-0">
                         <li><strong>${data.processed || 0}</strong> invoices processed</li>
-                        <li><strong>${data.failed || 0}</strong> failed (invalid format)</li>`;
-            
-            // Show assignment info if available
-            if (data.assignedTo) {
-                resultHtml += `
-                        <li class="text-success"><strong>✓ Assigned to:</strong> ${data.assignedTo.user_name} (${data.assignedTo.user_email})</li>
-                        <li class="text-success"><strong>✓ Codes assigned:</strong> ${data.assignedTo.code_count} (${data.assignedTo.codes.join(', ')})</li>`;
-            }
-            
-            resultHtml += `
+                        <li><strong>${data.failed || 0}</strong> failed (invalid format)</li>
                     </ul>
                     ${data.message ? `<p class="mb-0 mt-2"><em>${data.message}</em></p>` : ''}
                 </div>
