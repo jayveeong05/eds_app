@@ -361,8 +361,40 @@ async function parseAndSave() {
         return;
     }
     
+    const totalFiles = uploadedKeys.length;
     document.getElementById('saveBtn').disabled = true;
-    showLoading();
+    
+    // Show progress indicator
+    const progressHtml = `
+        <div class="alert alert-info">
+            <div class="d-flex align-items-center mb-2">
+                <div class="spinner-border spinner-border-sm text-primary me-3" role="status">
+                    <span class="visually-hidden">Processing...</span>
+                </div>
+                <div class="flex-grow-1">
+                    <h6 class="alert-heading mb-1">Processing Database Save...</h6>
+                    <p class="mb-2">Parsing and saving <strong>${totalFiles}</strong> invoice files to database</p>
+                    <div class="progress" style="height: 25px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" 
+                             role="progressbar" 
+                             style="width: 100%" 
+                             aria-valuenow="100" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                            <span class="fw-bold">Processing ${totalFiles} files...</span>
+                        </div>
+                    </div>
+                    <small class="text-muted mt-1 d-block">
+                        <i class="bi bi-info-circle"></i> This may take a moment for large batches. Please do not close this page.
+                    </small>
+                </div>
+            </div>
+        </div>
+    `;
+    document.getElementById('saveResult').innerHTML = progressHtml;
+    
+    // Scroll to show progress
+    document.getElementById('saveResult').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     
     try {
         const requestBody = { s3Keys: uploadedKeys };
@@ -372,22 +404,33 @@ async function parseAndSave() {
         });
         
         if (data.success) {
+            // Determine alert type based on failures
+            const hasFailures = data.failedFiles && data.failedFiles.length > 0;
+            const alertType = hasFailures ? 'alert-warning' : 'alert-success';
+            const alertIcon = hasFailures ? '⚠️' : '✅';
+            
             // Show results - match backend response fields
             let resultHtml = `
-                <div class="alert alert-success">
-                    <h6 class="alert-heading">✅ Database Save Complete</h6>
+                <div class="alert ${alertType}">
+                    <h6 class="alert-heading">${alertIcon} Database Save Complete</h6>
                     <ul class="mb-0">
-                        <li><strong>${data.processed || 0}</strong> invoices processed</li>
-                        <li><strong>${data.failed || 0}</strong> failed (invalid format)</li>
+                        <li><strong>${data.processed || 0}</strong> invoices processed successfully</li>
+                        <li><strong>${data.failed || 0}</strong> files failed</li>
                     </ul>
                     ${data.message ? `<p class="mb-0 mt-2"><em>${data.message}</em></p>` : ''}
                 </div>
             `;
+            
+            // Show failed files if any - make it prominent
+            if (hasFailures) {
+                resultHtml += showFailedFiles(data.failedFiles);
+            }
+            
             document.getElementById('saveResult').innerHTML = resultHtml;
             
-            // Show failed files if any
-            if (data.failedFiles && data.failedFiles.length > 0) {
-                showFailedFiles(data.failedFiles);
+            // Scroll to result if there are failures
+            if (hasFailures) {
+                document.getElementById('saveResult').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
             
             // Clear file input
@@ -405,24 +448,62 @@ async function parseAndSave() {
         }
     } catch (error) {
         console.error('Save error:', error);
+        // Show error in result area
+        document.getElementById('saveResult').innerHTML = `
+            <div class="alert alert-danger">
+                <h6 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Save Failed</h6>
+                <p class="mb-0">${escapeHtml(error.message || 'Unknown error occurred')}</p>
+            </div>
+        `;
         showToast('Failed to save: ' + error.message, 'danger');
     } finally {
-        hideLoading();  // Fixed: was showLoading(false)
         document.getElementById('saveBtn').disabled = false;
     }
 }
 
 
-// Show failed files
+// Show failed files - returns HTML string
 function showFailedFiles(failedFiles) {
-    let tableHtml = '<h6 class="text-danger mt-3">Failed Files:</h6><table class="table table-sm"><thead><tr><th>Filename</th><th>Reason</th></tr></thead><tbody>';
+    if (!failedFiles || failedFiles.length === 0) {
+        return '';
+    }
     
-    failedFiles.forEach(file => {
-        tableHtml += `<tr><td>${file.filename}</td><td>${file.reason}</td></tr>`;
+    let html = `
+        <div class="alert alert-danger mt-3">
+            <h6 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Failed Files (${failedFiles.length}):</h6>
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th style="width: 50%;">Filename</th>
+                            <th style="width: 50%;">Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+    `;
+    
+    failedFiles.forEach((file, index) => {
+        html += `<tr>
+            <td><code>${escapeHtml(file.filename || 'Unknown')}</code></td>
+            <td>${escapeHtml(file.reason || 'Unknown error')}</td>
+        </tr>`;
     });
     
-    tableHtml += '</tbody></table>';
-    document.getElementById('saveResult').innerHTML += tableHtml;
+    html += `
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+    
+    return html;
+}
+
+// Helper: Escape HTML to prevent XSS
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // Upload single file with custom filename
