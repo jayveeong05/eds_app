@@ -42,7 +42,18 @@ try {
     
     $stmt = $db->prepare($query);
     $stmt->execute();
-    $requests = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $rawRequests = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Convert timestamps to ISO 8601 format with timezone
+    $requests = [];
+    foreach ($rawRequests as $row) {
+        $createdAt = $row['created_at'];
+        if ($createdAt && strpos($createdAt, 'T') === false && strpos($createdAt, 'Z') === false) {
+            $createdAt = str_replace(' ', 'T', $createdAt) . 'Z';
+        }
+        $row['created_at'] = $createdAt;
+        $requests[] = $row;
+    }
     
     // Calculate statistics
     $stats = [

@@ -24,7 +24,7 @@ $currentPage = 'invoices';
             <h6 class="text-eds-primary"><strong>Step 1:</strong> Select Invoice Files</h6>
             <input type="file" class="form-control" id="invoiceFiles" multiple accept=".pdf">
             <small class="text-muted">
-                Expected format: <code>AA001001-Jan.pdf</code>, <code>AB001001-Dec.pdf</code>, etc.<br>
+                Expected format: <code>AA001001-Jan.pdf</code>, <code>TOG002020-Dec.pdf</code>, <code>3I001003-Dec.pdf</code>, etc.<br>
                 <strong>Note:</strong> New uploads replace old data for the same code+month (max 12 records per machine)
             </small>
             <div id="fileCount" class="mt-2 text-muted"></div>
@@ -109,9 +109,9 @@ function validateInvoiceFilename(filename) {
     const code = parts[0].trim();
     const monthAbbr = parts[1].trim();
     
-    // Validate code format: AA001001 (2 letters + 6 digits)
-    if (!/^[A-Z]{2}[0-9]{6}$/.test(code)) {
-        return { valid: false, reason: 'Code must be 2 uppercase letters + 6 digits (e.g., AA001001)' };
+    // Validate code format: AA001001, TOG002020, 3I001003 (1-3 alphanumeric + 6 digits)
+    if (!/^[A-Z0-9]{1,3}[0-9]{6}$/.test(code)) {
+        return { valid: false, reason: 'Code must be 1-3 alphanumeric characters (A-Z, 0-9) + 6 digits (e.g., AA001001, TOG002020, 3I001003)' };
     }
     
     // Validate month abbreviation

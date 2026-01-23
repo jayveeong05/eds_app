@@ -47,6 +47,12 @@ try {
     // Fetch all results
     $items = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        // Convert timestamp to ISO 8601 format with timezone
+        $createdAt = $row['created_at'];
+        if ($createdAt && strpos($createdAt, 'T') === false && strpos($createdAt, 'Z') === false) {
+            $createdAt = str_replace(' ', 'T', $createdAt) . 'Z';
+        }
+        $row['created_at'] = $createdAt;
         $items[] = $row;
     }
     

@@ -46,12 +46,20 @@ try {
     
     $invoices = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        // Convert timestamp to ISO 8601 format with timezone
+        // If timestamp is without timezone, assume it's UTC
+        $createdAt = $row['created_at'];
+        if ($createdAt && strpos($createdAt, 'T') === false && strpos($createdAt, 'Z') === false) {
+            // Format: "2025-12-19 09:56:40.727965" -> convert to ISO with UTC
+            $createdAt = str_replace(' ', 'T', $createdAt) . 'Z';
+        }
+        
         $invoices[] = [
             'id' => $row['id'],
             'code' => $row['code'],
             'month' => $row['month'],
             'file_url' => $row['file_url'],
-            'created_at' => $row['created_at']
+            'created_at' => $createdAt
         ];
     }
     

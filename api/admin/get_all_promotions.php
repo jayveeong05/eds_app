@@ -97,12 +97,18 @@ try {
             $profileImageUrl = $s3->getPresignedUrl(AWS_BUCKET, $profileImageUrl, 3600);
         }
         
+        // Convert timestamp to ISO 8601 format with timezone
+        $createdAt = $row['created_at'];
+        if ($createdAt && strpos($createdAt, 'T') === false && strpos($createdAt, 'Z') === false) {
+            $createdAt = str_replace(' ', 'T', $createdAt) . 'Z';
+        }
+        
         $promotions[] = [
             'id' => $row['id'],
             'image_url' => $imageUrl,
             'title' => $row['title'],
             'description' => $row['description'],
-            'created_at' => $row['created_at'],
+            'created_at' => $createdAt,
             'user' => [
                 'id' => $row['user_id'],
                 'email' => $row['email'] ?? 'System',

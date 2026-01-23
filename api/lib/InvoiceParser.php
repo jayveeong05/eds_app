@@ -4,7 +4,8 @@
  * 
  * Parses invoice filenames and extracts machine code, month, and year
  * Expected format: {CODE}-{MONTH}-{YEAR}.pdf
- * Examples: AA001001-Jan-2025.pdf, AB001002-Dec-2024.pdf
+ * Examples: AA001001-Jan-2025.pdf, TOG002020-Dec.pdf, 3I001003-Dec.pdf
+ * Code format: 1-3 alphanumeric characters (A-Z, 0-9) followed by 6 digits
  */
 
 class InvoiceParser {
@@ -47,8 +48,8 @@ class InvoiceParser {
         $code = trim($parts[0]);
         $monthAbbr = trim($parts[1]);
         
-        // Validate code format: AA001001 (2 letters + 6 digits)
-        if (!preg_match('/^[A-Z]{2}[0-9]{6}$/', $code)) {
+        // Validate code format: AA001001, TOG002020, 3I001003 (1-3 alphanumeric + 6 digits)
+        if (!preg_match('/^[A-Z0-9]{1,3}[0-9]{6}$/', $code)) {
             return null; // Invalid code format
         }
         

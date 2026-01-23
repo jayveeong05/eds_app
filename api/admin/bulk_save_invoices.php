@@ -52,7 +52,7 @@ try {
         if (!$parsed) {
             $failedFiles[] = [
                 'filename' => $filename,
-                'reason' => 'Invalid filename format (expected: AA001001-Jan.pdf)'
+                'reason' => 'Invalid filename format (expected: AA001001-Jan.pdf, TOG002020-Dec.pdf, etc.)'
             ];
             continue;
         }

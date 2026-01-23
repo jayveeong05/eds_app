@@ -24,7 +24,7 @@ $currentPage = 'invoices';
             <h6 class="text-eds-primary"><strong>Step 1:</strong> Select Invoice Files</h6>
             <input type="file" class="form-control" id="invoiceFiles" multiple accept=".pdf">
             <small class="text-muted">
-                Expected format: <code>AA001001-Jan.pdf</code>, <code>AB001001-Dec.pdf</code>, etc.<br>
+                Expected format: <code>AA001001-Jan.pdf</code>, <code>TOG002020-Dec.pdf</code>, <code>3I001003-Dec.pdf</code>, etc.<br>
                 <strong>Note:</strong> New uploads replace old data for the same code+month (max 12 records per machine)
             </small>
             <div id="fileCount" class="mt-2 text-muted"></div>
@@ -178,12 +178,37 @@ function displayInvoices(invoices) {
     `).join('');
 }
 
-// Format date helper
+// Format date helper - properly handles timezone-less timestamps
 function formatDate(dateStr) {
     if (!dateStr) return '-';
-    const date = new Date(dateStr);
-    const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-    return date.toLocaleDateString('en-US', options);
+    
+    // If timestamp doesn't have timezone info, treat it as UTC
+    let dateStrToParse = dateStr;
+    if (!dateStr.includes('T') && !dateStr.includes('Z') && !dateStr.includes('+') && !dateStr.includes('-', 10)) {
+        // Format: "2025-12-19 09:56:40.727965" - treat as UTC
+        dateStrToParse = dateStr.replace(' ', 'T') + 'Z';
+    } else if (dateStr.includes('T') && !dateStr.includes('Z') && !dateStr.includes('+') && !dateStr.match(/[+-]\d{2}:\d{2}$/)) {
+        // Format: "2025-12-19T09:56:40.727965" - add Z for UTC
+        dateStrToParse = dateStr + 'Z';
+    }
+    
+    const date = new Date(dateStrToParse);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+        return dateStr; // Return original if parsing fails
+    }
+    
+    // Format in user's local timezone
+    const options = { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric', 
+        hour: '2-digit', 
+        minute: '2-digit',
+        timeZoneName: 'short'
+    };
+    return date.toLocaleString('en-US', options);
 }
 
 // Delete invoice
@@ -227,9 +252,9 @@ function validateInvoiceFilename(filename) {
     const code = parts[0].trim();
     const monthAbbr = parts[1].trim();
     
-    // Validate code format: AA001001 (2 letters + 6 digits)
-    if (!/^[A-Z]{2}[0-9]{6}$/.test(code)) {
-        return { valid: false, reason: 'Code must be 2 uppercase letters + 6 digits (e.g., AA001001)' };
+    // Validate code format: AA001001, TOG002020, 3I001003 (1-3 alphanumeric + 6 digits)
+    if (!/^[A-Z0-9]{1,3}[0-9]{6}$/.test(code)) {
+        return { valid: false, reason: 'Code must be 1-3 alphanumeric characters (A-Z, 0-9) + 6 digits (e.g., AA001001, TOG002020, 3I001003)' };
     }
     
     // Validate month abbreviation

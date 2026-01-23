@@ -85,6 +85,12 @@ try {
             $imageUrl = $s3->getPresignedUrl(AWS_BUCKET, $imageUrl, 3600);
         }
         
+        // Convert timestamp to ISO 8601 format with timezone
+        $createdAt = $row['created_at'];
+        if ($createdAt && strpos($createdAt, 'T') === false && strpos($createdAt, 'Z') === false) {
+            $createdAt = str_replace(' ', 'T', $createdAt) . 'Z';
+        }
+        
         $newsItems[] = [
             'id' => $row['id'],
             'user_id' => $row['user_id'],
@@ -93,7 +99,7 @@ try {
             'details' => $row['details'],
             'link' => $row['link'],
             'image_url' => $imageUrl,
-            'created_at' => $row['created_at']
+            'created_at' => $createdAt
         ];
     }
 

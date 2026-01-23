@@ -606,9 +606,28 @@ function renderTable() {
     `).join('');
 }
 
-// Helper functions
+// Helper functions - properly handles timezone-less timestamps
 function formatDate(dateStr) {
-    const date = new Date(dateStr);
+    if (!dateStr) return '-';
+    
+    // If timestamp doesn't have timezone info, treat it as UTC
+    let dateStrToParse = dateStr;
+    if (!dateStr.includes('T') && !dateStr.includes('Z') && !dateStr.includes('+') && !dateStr.includes('-', 10)) {
+        // Format: "2025-12-19 09:56:40.727965" - treat as UTC
+        dateStrToParse = dateStr.replace(' ', 'T') + 'Z';
+    } else if (dateStr.includes('T') && !dateStr.includes('Z') && !dateStr.includes('+') && !dateStr.match(/[+-]\d{2}:\d{2}$/)) {
+        // Format: "2025-12-19T09:56:40.727965" - add Z for UTC
+        dateStrToParse = dateStr + 'Z';
+    }
+    
+    const date = new Date(dateStrToParse);
+    
+    // Check if date is valid
+    if (isNaN(date.getTime())) {
+        return dateStr; // Return original if parsing fails
+    }
+    
+    // Format in user's local timezone
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 }
 
