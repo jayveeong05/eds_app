@@ -1,7 +1,7 @@
 <?php
 /**
- * Admin - Delete Promotion
- * Permanently delete a promotion
+ * Admin - Delete Invoice
+ * Permanently delete an invoice (both database record and S3 file)
  */
 
 header("Access-Control-Allow-Origin: *");
@@ -16,11 +16,11 @@ require_once __DIR__ . '/../config/s3_config.php';
 
 $data = json_decode(file_get_contents("php://input"));
 
-if (empty($data->idToken) || empty($data->promotionId)) {
+if (empty($data->idToken) || empty($data->invoiceId)) {
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'message' => 'Missing required fields: idToken, promotionId'
+        'message' => 'Missing required fields: idToken, invoiceId'
     ]);
     exit;
 }
@@ -33,50 +33,52 @@ try {
     $database = new Database();
     $db = $database->getConnection();
     
-    // Get promotion info before deletion for logging and S3 file deletion
-    $promoQuery = "SELECT description, image_url FROM promotions WHERE id = :promotionId";
-    $promoStmt = $db->prepare($promoQuery);
-    $promoStmt->bindParam(':promotionId', $data->promotionId);
-    $promoStmt->execute();
+    // Get invoice info before deletion for logging and S3 file deletion
+    $invoiceQuery = "SELECT code, month, file_url FROM invoices WHERE id = :invoiceId";
+    $invoiceStmt = $db->prepare($invoiceQuery);
+    $invoiceStmt->bindParam(':invoiceId', $data->invoiceId);
+    $invoiceStmt->execute();
     
-    if ($promoStmt->rowCount() === 0) {
+    if ($invoiceStmt->rowCount() === 0) {
         http_response_code(404);
         echo json_encode([
             'success' => false,
-            'message' => 'Promotion not found'
+            'message' => 'Invoice not found'
         ]);
         exit;
     }
     
-    $promotion = $promoStmt->fetch(PDO::FETCH_ASSOC);
+    $invoice = $invoiceStmt->fetch(PDO::FETCH_ASSOC);
     
     // Delete S3 file if it exists and is an S3 key (not a full URL)
     $s3Deleted = false;
-    if (!empty($promotion['image_url']) && strpos($promotion['image_url'], 'http') !== 0) {
+    if (!empty($invoice['file_url']) && strpos($invoice['file_url'], 'http') !== 0) {
         try {
             $s3 = new SimpleS3(AWS_ACCESS_KEY, AWS_SECRET_KEY, AWS_REGION);
-            $deleteResult = $s3->deleteObject(AWS_BUCKET, $promotion['image_url']);
+            $deleteResult = $s3->deleteObject(AWS_BUCKET, $invoice['file_url']);
             $s3Deleted = ($deleteResult === true);
         } catch (Exception $e) {
             // Log error but continue with database deletion
-            error_log("Failed to delete S3 file for promotion: " . $e->getMessage());
+            error_log("Failed to delete S3 file for invoice: " . $e->getMessage());
         }
     }
     
-    // Delete promotion from database
-    $query = "DELETE FROM promotions WHERE id = :promotionId";
+    // Delete invoice from database
+    $query = "DELETE FROM invoices WHERE id = :invoiceId";
     $stmt = $db->prepare($query);
-    $stmt->bindParam(':promotionId', $data->promotionId);
+    $stmt->bindParam(':invoiceId', $data->invoiceId);
     
     if ($stmt->execute()) {
         // Log admin action
         $middleware->logAction(
             $admin['id'],
-            'delete_promotion',
-            'promotion',
-            $data->promotionId,
+            'delete_invoice',
+            'invoice',
+            $data->invoiceId,
             json_encode([
-                'deleted_description' => substr($promotion['description'], 0, 100),
+                'deleted_code' => $invoice['code'],
+                'deleted_month' => $invoice['month'],
+                's3_file_deleted' => $s3Deleted,
                 'admin_email' => $admin['email']
             ])
         );
@@ -84,13 +86,13 @@ try {
         http_response_code(200);
         echo json_encode([
             'success' => true,
-            'message' => 'Promotion deleted successfully'
+            'message' => 'Invoice deleted successfully' . ($s3Deleted ? ' (S3 file removed)' : ' (S3 file deletion skipped)')
         ]);
     } else {
         http_response_code(500);
         echo json_encode([
             'success' => false,
-            'message' => 'Failed to delete promotion'
+            'message' => 'Failed to delete invoice'
         ]);
     }
     
@@ -102,3 +104,4 @@ try {
     ]);
 }
 ?>
+

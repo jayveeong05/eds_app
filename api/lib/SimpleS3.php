@@ -281,5 +281,67 @@ class SimpleS3 {
         
         return $presigned_url;
     }
+
+    /**
+     * Delete object from S3
+     * @param string $bucket - S3 bucket name
+     * @param string $key - S3 object key (e.g., "invoices/AA001001-Jan.pdf")
+     * @return bool|string - true on success, error message on failure
+     */
+    public function deleteObject($bucket, $key) {
+        $host = "$bucket.s3.$this->region.amazonaws.com";
+        $service = 's3';
+        $algorithm = 'AWS4-HMAC-SHA256';
+        $amz_date = gmdate('Ymd\THis\Z');
+        $date_stamp = gmdate('Ymd');
+        
+        // Canonical Request for DELETE
+        $canonical_uri = '/' . $key;
+        $canonical_querystring = '';
+        $canonical_headers = "host:$host\nx-amz-date:$amz_date\n";
+        $signed_headers = 'host;x-amz-date';
+        $payload_hash = hash('sha256', ''); // Empty payload for DELETE
+        
+        $canonical_request = "DELETE\n$canonical_uri\n$canonical_querystring\n$canonical_headers\n$signed_headers\n$payload_hash";
+        
+        // String to Sign
+        $credential_scope = "$date_stamp/$this->region/$service/aws4_request";
+        $string_to_sign = "$algorithm\n$amz_date\n$credential_scope\n" . hash('sha256', $canonical_request);
+        
+        // Signature Calculation
+        $kSecret = 'AWS4' . $this->secretKey;
+        $kDate = hash_hmac('sha256', $date_stamp, $kSecret, true);
+        $kRegion = hash_hmac('sha256', $this->region, $kDate, true);
+        $kService = hash_hmac('sha256', $service, $kRegion, true);
+        $kSigning = hash_hmac('sha256', 'aws4_request', $kService, true);
+        $signature = hash_hmac('sha256', $string_to_sign, $kSigning);
+        
+        // Authorization Header
+        $authorization_header = "$algorithm Credential=$this->accessKey/$credential_scope, SignedHeaders=$signed_headers, Signature=$signature";
+        
+        $headers = array(
+            "Host: $host",
+            "Authorization: $authorization_header",
+            "x-amz-date: $amz_date",
+            "x-amz-content-sha256: $payload_hash"
+        );
+        
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, "https://$host/$key");
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'DELETE');
+        curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        
+        $result = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+        
+        // S3 returns 204 No Content on successful delete
+        if ($http_code === 204 || $http_code === 200) {
+            return true;
+        } else {
+            return "Error ($http_code): $result";
+        }
+    }
 }
 ?>

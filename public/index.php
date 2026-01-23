@@ -51,6 +51,7 @@ $router->add('POST', '/api/verify_admin.php', 'ApiController@verifyAdmin');
 $router->add('POST', '/api/upload.php', 'ApiController@upload');
 $router->add('POST', '/api/upload_knowledge_base.php', 'ApiController@uploadKnowledgeBase');
 $router->add('GET', '/api/get_knowledge_base.php', 'ApiController@getKnowledgeBase');
+$router->add('POST', '/api/delete_knowledge_base.php', 'ApiController@deleteKnowledgeBase');
 $router->add('GET', '/api/get_code_invoices.php', 'ApiController@getCodeInvoices');
 $router->add('POST', '/api/get_code_invoices.php', 'ApiController@getCodeInvoices');
 $router->add('GET', '/api/get_promotions.php', 'ApiController@getPromotions');
@@ -93,6 +94,8 @@ $router->add('POST', '/api/admin/delete_news.php', 'AdminApiController@deleteNew
 $router->add('POST', '/api/admin/get_printer_requests.php', 'AdminApiController@getPrinterRequests');
 $router->add('POST', '/api/admin/upload_printer_kb.php', 'AdminApiController@uploadPrinterKb');
 $router->add('POST', '/api/admin/bulk_save_invoices.php', 'AdminApiController@bulkSaveInvoices');
+$router->add('POST', '/api/admin/get_all_invoices.php', 'AdminApiController@getAllInvoices');
+$router->add('POST', '/api/admin/delete_invoice.php', 'AdminApiController@deleteInvoice');
 $router->add('POST', '/api/admin/get_all_machine_codes.php', 'AdminApiController@getAllMachineCodes');
 $router->add('POST', '/api/admin/get_user_machine_codes.php', 'AdminApiController@getUserMachineCodes');
 $router->add('POST', '/api/admin/add_user_machine_code.php', 'AdminApiController@addUserMachineCode');

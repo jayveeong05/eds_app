@@ -61,7 +61,7 @@ $currentPage = 'invoices';
 </div>
 
 <!-- Preview Card -->
-<div class="card" id="previewCard" style="display:none;">
+<div class="card mb-4" id="previewCard" style="display:none;">
     <div class="card-header">
         <h5 class="mb-0"><i class="bi bi-eye"></i> Upload Preview</h5>
     </div>
@@ -83,8 +83,126 @@ $currentPage = 'invoices';
     </div>
 </div>
 
+<!-- Invoice List Card -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-table"></i> All Invoices</h5>
+        <span class="badge bg-secondary" id="invoiceCount">0 invoices</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-custom table-hover">
+                <thead>
+                    <tr>
+                        <th>Machine Code</th>
+                        <th>Month</th>
+                        <th>Uploaded</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="invoicesTableBody">
+                    <tr>
+                        <td colspan="4" class="text-center text-muted py-4">
+                            <i class="bi bi-hourglass-split"></i> Loading invoices...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <script>
 let uploadedKeys = [];
+let allInvoices = [];
+
+// Load invoices on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadInvoices();
+});
+
+// Load all invoices
+async function loadInvoices() {
+    try {
+        const data = await apiRequest(ADMIN_API_BASE + '/get_all_invoices.php', {
+            body: {
+                limit: 100,
+                offset: 0
+            }
+        });
+        
+        if (data.success) {
+            allInvoices = data.data;
+            displayInvoices(data.data);
+            document.getElementById('invoiceCount').textContent = data.total + ' invoices';
+        }
+    } catch (error) {
+        document.getElementById('invoicesTableBody').innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center text-danger py-4">
+                    <i class="bi bi-exclamation-triangle"></i> ${error.message}
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Display invoices in table
+function displayInvoices(invoices) {
+    const tbody = document.getElementById('invoicesTableBody');
+    
+    if (invoices.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center text-muted py-4">
+                    <i class="bi bi-inbox"></i> No invoices found
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    tbody.innerHTML = invoices.map(invoice => `
+        <tr>
+            <td>
+                <code>${invoice.code}</code>
+            </td>
+            <td>${invoice.month}</td>
+            <td>${formatDate(invoice.created_at)}</td>
+            <td>
+                <button class="btn btn-sm btn-danger" onclick="deleteInvoice('${invoice.id}', '${invoice.code}', '${invoice.month}')" title="Delete Invoice">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+// Format date helper
+function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    const date = new Date(dateStr);
+    const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+    return date.toLocaleDateString('en-US', options);
+}
+
+// Delete invoice
+async function deleteInvoice(invoiceId, code, month) {
+    if (!confirmAction(`Are you sure you want to delete invoice ${code}-${month}? This will permanently delete the invoice and its PDF file from S3.`)) return;
+    
+    try {
+        const data = await apiRequest(ADMIN_API_BASE + '/delete_invoice.php', {
+            body: { invoiceId }
+        });
+        
+        if (data.success) {
+            showToast(data.message || 'Invoice deleted successfully', 'success');
+            loadInvoices(); // Reload the list
+        }
+    } catch (error) {
+        showToast('Failed to delete invoice: ' + error.message, 'danger');
+    }
+}
 
 // Month abbreviation mapping (must match InvoiceParser.php)
 const VALID_MONTHS = {
@@ -254,6 +372,9 @@ async function parseAndSave() {
             uploadedKeys = [];
             
             showToast('Invoices saved to database!', 'success');
+            
+            // Refresh invoice list
+            loadInvoices();
         } else {
             showToast('Failed to save: ' + (data.message || 'Unknown error'), 'danger');
         }

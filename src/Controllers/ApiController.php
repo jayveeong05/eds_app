@@ -88,6 +88,10 @@ class ApiController extends BaseController {
         $this->render('/api/upload_knowledge_base.php');
     }
 
+    public function deleteKnowledgeBase() {
+        $this->render('/api/delete_knowledge_base.php');
+    }
+
     public function toggleKbFavorite() {
         $this->render('/api/toggle_kb_favorite.php');
     }

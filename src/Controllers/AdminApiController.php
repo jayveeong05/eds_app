@@ -64,6 +64,14 @@ class AdminApiController extends BaseController {
         $this->render('/api/admin/bulk_save_invoices.php');
     }
 
+    public function getAllInvoices() {
+        $this->render('/api/admin/get_all_invoices.php');
+    }
+
+    public function deleteInvoice() {
+        $this->render('/api/admin/delete_invoice.php');
+    }
+
     public function getAllMachineCodes() {
         $this->render('/api/admin/get_all_machine_codes.php');
     }

@@ -209,25 +209,25 @@ function displayDocuments(documents) {
 
 // Delete document
 async function deleteDocument(id, title) {
-    if (!confirm(`Are you sure you want to delete "${title}"?`)) {
+    if (!confirmAction(`Are you sure you want to delete "${title}"? This will permanently delete the document and its PDF file from S3.`)) {
         return;
     }
     
     showLoading();
     
     try {
-        const response = await fetch(API_BASE + '/delete_knowledge_base.php', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: 'id=' + encodeURIComponent(id)
+        // Get auth token for admin authentication
+        const idToken = await getAuthToken();
+        
+        const data = await apiRequest(API_BASE + '/delete_knowledge_base.php', {
+            body: {
+                idToken: idToken,
+                id: id
+            }
         });
         
-        const data = await response.json();
-        
         if (data.success) {
-            showToast('Document deleted successfully', 'success');
+            showToast(data.message || 'Document deleted successfully', 'success');
             loadDocuments(); // Reload the table
         } else {
             showToast('Delete failed: ' + (data.message || 'Unknown error'), 'danger');

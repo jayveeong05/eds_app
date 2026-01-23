@@ -11,6 +11,8 @@ header("Access-Control-Allow-Headers: Content-Type");
 
 require_once __DIR__ . '/../lib/AdminMiddleware.php';
 require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../lib/SimpleS3.php';
+require_once __DIR__ . '/../config/s3_config.php';
 
 $data = json_decode(file_get_contents("php://input"));
 
@@ -31,8 +33,8 @@ try {
     $database = new Database();
     $db = $database->getConnection();
     
-    // Get news info before deletion for logging
-    $newsQuery = "SELECT title FROM news WHERE id = :newsId";
+    // Get news info before deletion for logging and S3 file deletion
+    $newsQuery = "SELECT title, image_url FROM news WHERE id = :newsId";
     $newsStmt = $db->prepare($newsQuery);
     $newsStmt->bindParam(':newsId', $data->newsId);
     $newsStmt->execute();
@@ -48,7 +50,20 @@ try {
     
     $news = $newsStmt->fetch(PDO::FETCH_ASSOC);
     
-    // Delete news
+    // Delete S3 file if it exists and is an S3 key (not a full URL)
+    $s3Deleted = false;
+    if (!empty($news['image_url']) && strpos($news['image_url'], 'http') !== 0) {
+        try {
+            $s3 = new SimpleS3(AWS_ACCESS_KEY, AWS_SECRET_KEY, AWS_REGION);
+            $deleteResult = $s3->deleteObject(AWS_BUCKET, $news['image_url']);
+            $s3Deleted = ($deleteResult === true);
+        } catch (Exception $e) {
+            // Log error but continue with database deletion
+            error_log("Failed to delete S3 file for news: " . $e->getMessage());
+        }
+    }
+    
+    // Delete news from database
     $query = "DELETE FROM news WHERE id = :newsId";
     $stmt = $db->prepare($query);
     $stmt->bindParam(':newsId', $data->newsId);
