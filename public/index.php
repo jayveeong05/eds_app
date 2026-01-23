@@ -97,6 +97,9 @@ $router->add('POST', '/api/admin/get_all_machine_codes.php', 'AdminApiController
 $router->add('POST', '/api/admin/get_user_machine_codes.php', 'AdminApiController@getUserMachineCodes');
 $router->add('POST', '/api/admin/add_user_machine_code.php', 'AdminApiController@addUserMachineCode');
 $router->add('POST', '/api/admin/delete_user_machine_code.php', 'AdminApiController@deleteUserMachineCode');
+$router->add('POST', '/api/admin/restore_user.php', 'AdminApiController@restoreUser');
+$router->add('POST', '/api/admin/update_user_name.php', 'AdminApiController@updateUserName');
+$router->add('POST', '/api/admin/reset_user_password.php', 'AdminApiController@resetUserPassword');
 $router->add('GET', '/api/admin/get_user_details.php', 'AdminApiController@getUserDetails');
 $router->add('GET', '/api/admin/get_token.php', 'AdminApiController@getToken');
 

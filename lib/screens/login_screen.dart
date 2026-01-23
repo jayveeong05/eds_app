@@ -94,6 +94,11 @@ class _LoginScreenState extends State<LoginScreen> {
           setState(() {
             _errorMessage = 'Account not found. Please register first.';
           });
+        } else if (status == 'deleted') {
+          debugPrint('🔐 [LOGIN] Deleted user - showing error');
+          setState(() {
+            _errorMessage = 'Your account has been deleted. Please contact support for assistance.';
+          });
         } else if (status == 'active') {
           debugPrint('🔐 [LOGIN] Active user - redirecting to dashboard');
           Navigator.pushReplacementNamed(context, '/dashboard');
@@ -106,7 +111,13 @@ class _LoginScreenState extends State<LoginScreen> {
       } else {
         debugPrint('🔐 [LOGIN] Authentication failed: ${result['message']}');
 
+        // Check for deleted account message
         if (result['message'] != null &&
+            result['message'].toString().toLowerCase().contains('deleted')) {
+          setState(() {
+            _errorMessage = 'Your account has been deleted. Please contact support for assistance.';
+          });
+        } else if (result['message'] != null &&
             result['message'].toString().toLowerCase().contains(
               'user-not-found',
             )) {

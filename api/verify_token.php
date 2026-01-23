@@ -61,8 +61,21 @@ if (!empty($data->idToken)) {
         $stmt->execute();
         
         if ($stmt->rowCount() > 0) {
-            // User exists, return status
+            // User exists, check if deleted
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Block deleted users from authenticating
+            if ($row['status'] === 'deleted') {
+                http_response_code(403);
+                echo json_encode(array(
+                    "success" => false,
+                    "message" => "Account has been deleted. Please contact support.",
+                    "user" => $row,
+                    "is_new_user" => false
+                ));
+                exit;
+            }
+            
             echo json_encode(array(
                 "success" => true,
                 "message" => "User verified.",

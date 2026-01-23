@@ -80,6 +80,18 @@ class AdminApiController extends BaseController {
         $this->render('/api/admin/delete_user_machine_code.php');
     }
 
+    public function restoreUser() {
+        $this->render('/api/admin/restore_user.php');
+    }
+
+    public function updateUserName() {
+        $this->render('/api/admin/update_user_name.php');
+    }
+
+    public function resetUserPassword() {
+        $this->render('/api/admin/reset_user_password.php');
+    }
+
     public function getUserDetails() {
         $this->render('/api/admin/get_user_details.php');
     }

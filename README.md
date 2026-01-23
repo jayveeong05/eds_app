@@ -362,6 +362,11 @@ DO_AGENT_API_KEY=your-kb-agent-key
 DO_PRINTER_AGENT_URL=your-printer-agent-url
 DO_PRINTER_AGENT_KEY=your-printer-agent-key
 
+# Firebase (for password reset functionality)
+# Get this from Firebase Console > Project Settings > General > Web API Key
+# Or use the web API key from lib/firebase_options.dart
+FIREBASE_API_KEY=AIzaSyCeVSNrtNEmclI0jtMEvHWt4QrCdZDDCB0
+
 # Environment
 APP_ENV=development
 ```

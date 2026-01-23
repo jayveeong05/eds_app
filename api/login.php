@@ -24,6 +24,17 @@ if(
     // Check if email exists
     if($stmt->rowCount() > 0){
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Block deleted users from logging in
+        if ($row['status'] === 'deleted') {
+            http_response_code(403);
+            echo json_encode(array(
+                "message" => "Account has been deleted. Please contact support.",
+                "success" => false
+            ));
+            exit;
+        }
+        
         $password_hash = $row['password_hash'];
         
         if(password_verify($data->password, $password_hash)){

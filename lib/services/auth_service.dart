@@ -49,8 +49,27 @@ class AuthService {
       debugPrint('🔄 [SYNC] Response status: ${response.statusCode}');
       debugPrint('🔄 [SYNC] Response body: ${response.body}');
 
+      // Try to parse response body regardless of status code
+      Map<String, dynamic>? data;
+      try {
+        data = jsonDecode(response.body) as Map<String, dynamic>?;
+      } catch (e) {
+        debugPrint('🔄 [SYNC] ❌ Failed to parse response: $e');
+        return {
+          'success': false,
+          'message': 'Invalid server response',
+        };
+      }
+
+      if (data == null) {
+        debugPrint('🔄 [SYNC] ❌ Response data is null');
+        return {
+          'success': false,
+          'message': 'Invalid server response',
+        };
+      }
+
       if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
         debugPrint('🔄 [SYNC] Decoded data: $data');
         debugPrint('🔄 [SYNC] Data type: ${data.runtimeType}');
         debugPrint('🔄 [SYNC] Success value: ${data['success']}');
@@ -74,8 +93,16 @@ class AuthService {
           };
         }
       } else {
+        // For non-200 status codes, try to extract the error message from response
         debugPrint('🔄 [SYNC] ❌ Server error: ${response.statusCode}');
-        return {'success': false, 'message': 'Server error'};
+        final errorMessage = data['message'] ?? 
+                           (response.statusCode == 403 
+                             ? 'Access denied' 
+                             : 'Server error');
+        return {
+          'success': false,
+          'message': errorMessage,
+        };
       }
     } catch (e, stackTrace) {
       debugPrint('🔄 [SYNC] ❌ EXCEPTION: $e');

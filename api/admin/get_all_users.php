@@ -42,20 +42,27 @@ try {
     $query = "SELECT id::text as id, firebase_uid, email, name, role, status, 
                      login_method, profile_image_url, created_at 
               FROM users 
-              WHERE status != 'deleted'";
+              WHERE 1=1";
     
     $params = [];
+    
+    // Add status filter - if not 'all' and not 'deleted', exclude deleted users
+    // If 'deleted' is selected, only show deleted users
+    // If 'all' is selected, exclude deleted users by default (unless explicitly requested)
+    if ($statusFilter === 'deleted') {
+        $query .= " AND status = 'deleted'";
+    } elseif ($statusFilter !== 'all') {
+        $query .= " AND status = :status AND status != 'deleted'";
+        $params[':status'] = $statusFilter;
+    } else {
+        // Default: exclude deleted users when showing 'all'
+        $query .= " AND status != 'deleted'";
+    }
     
     // Add search filter (email or name)
     if (!empty($search)) {
         $query .= " AND (email ILIKE :search OR name ILIKE :search)";
         $params[':search'] = "%$search%";
-    }
-    
-    // Add status filter
-    if ($statusFilter !== 'all') {
-        $query .= " AND status = :status";
-        $params[':status'] = $statusFilter;
     }
     
     // Add role filter
@@ -84,12 +91,19 @@ try {
     }
     
     // Get total count for pagination
-    $countQuery = "SELECT COUNT(*) as total FROM users WHERE status != 'deleted'";
+    $countQuery = "SELECT COUNT(*) as total FROM users WHERE 1=1";
+    
+    // Apply same status filter logic as main query
+    if ($statusFilter === 'deleted') {
+        $countQuery .= " AND status = 'deleted'";
+    } elseif ($statusFilter !== 'all') {
+        $countQuery .= " AND status = :status AND status != 'deleted'";
+    } else {
+        $countQuery .= " AND status != 'deleted'";
+    }
+    
     if (!empty($search)) {
         $countQuery .= " AND (email ILIKE :search OR name ILIKE :search)";
-    }
-    if ($statusFilter !== 'all') {
-        $countQuery .= " AND status = :status";
     }
     if ($roleFilter !== 'all') {
         $countQuery .= " AND role = :role";

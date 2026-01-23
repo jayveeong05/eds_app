@@ -120,6 +120,11 @@ body {
   background-color: #757575;
 }
 
+.badge-danger {
+  background-color: #E53935;
+  color: white;
+}
+
 .badge-admin {
   background-color: var(--eds-blue);
 }

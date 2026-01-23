@@ -24,6 +24,7 @@ $currentPage = 'users';
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
                     <option value="inactive">Inactive</option>
+                    <option value="deleted">Deleted</option>
                 </select>
             </div>
             <div class="col-md-3">
@@ -71,6 +72,9 @@ $currentPage = 'users';
         </table>
     </div>
 </div>
+
+<!-- Dropdown Menu Container (outside table for proper positioning) -->
+<div id="dropdownMenuContainer" style="position: fixed; z-index: 1055; display: none;"></div>
 
 <!-- Machine Codes Management Modal -->
 <div class="modal fade" id="machineCodesModal" tabindex="-1" aria-labelledby="machineCodesModalLabel" aria-hidden="true">
@@ -137,6 +141,33 @@ $currentPage = 'users';
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit User Name Modal -->
+<div class="modal fade" id="editNameModal" tabindex="-1" aria-labelledby="editNameModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-eds-primary text-white">
+                <h5 class="modal-title" id="editNameModalLabel">
+                    <i class="bi bi-pencil"></i> Edit User Name
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3">Editing name for: <strong id="editNameUserEmail"></strong></p>
+                <div class="mb-3">
+                    <label for="userNameInput" class="form-label">User Name</label>
+                    <input type="text" class="form-control" id="userNameInput" placeholder="Enter user name">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-eds-primary" onclick="saveUserName()">
+                    <i class="bi bi-check"></i> Save Changes
+                </button>
             </div>
         </div>
     </div>
@@ -209,8 +240,8 @@ function displayUsers(users) {
                 </span>
             </td>
             <td>
-                <span class="badge ${user.status === 'active' ? 'badge-active' : 'badge-inactive'}">
-                    ${user.status}
+                <span class="badge ${user.status === 'active' ? 'badge-active' : user.status === 'deleted' ? 'badge-danger' : 'badge-inactive'}">
+                    ${user.status || 'unknown'}
                 </span>
             </td>
             <td>
@@ -219,30 +250,9 @@ function displayUsers(users) {
             </td>
             <td>${formatDate(user.created_at)}</td>
             <td>
-                <div class="btn-group btn-group-sm" role="group">
-                    ${user.status === 'active' 
-                        ? `<button class="btn btn-warning" onclick="updateUserStatus('${user.id}', 'inactive')" title="Deactivate">
-                            <i class="bi bi-x-circle"></i>
-                           </button>`
-                        : `<button class="btn btn-success" onclick="updateUserStatus('${user.id}', 'active')" title="Activate">
-                            <i class="bi bi-check-circle"></i>
-                           </button>`
-                    }
-                    ${user.role === 'user'
-                        ? `<button class="btn btn-info" onclick="updateUserRole('${user.id}', 'admin')" title="Promote to Admin">
-                            <i class="bi bi-shield-fill-check"></i>
-                           </button>`
-                        : `<button class="btn btn-secondary" onclick="updateUserRole('${user.id}', 'user')" title="Demote to User">
-                            <i class="bi bi-person"></i>
-                           </button>`
-                    }
-                    <button class="btn btn-danger" onclick="deleteUser('${user.id}', '${user.email}')" title="Delete">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                    <button class="btn btn-primary" onclick="openMachineCodesModal('${user.id}', '${user.name || user.email}')" title="Manage Machine Codes">
-                        <i class="bi bi-gear"></i>
-                    </button>
-                </div>
+                <button class="btn btn-sm btn-outline-secondary" type="button" onclick="showUserActionsMenu(event, '${user.id}', '${user.email}', '${user.name || ''}', '${user.status}', '${user.role}', '${user.login_method}')">
+                    <i class="bi bi-three-dots-vertical"></i>
+                </button>
             </td>
         </tr>
     `).join('');
@@ -298,7 +308,7 @@ async function updateUserRole(userId, newRole) {
 
 // Delete user
 async function deleteUser(userId, email) {
-    if (!confirmAction(`Are you sure you want to delete ${email}? This will deactivate their account.`)) return;
+    if (!confirmAction(`Are you sure you want to delete ${email}? This will permanently mark their account as deleted.`)) return;
     
     try {
         const data = await apiRequest(ADMIN_API_BASE + '/delete_user.php', {
@@ -311,6 +321,81 @@ async function deleteUser(userId, email) {
         }
     } catch (error) {
         showToast('Failed to delete user: ' + error.message, 'danger');
+    }
+}
+
+// Restore user
+async function restoreUser(userId, email) {
+    if (!confirmAction(`Are you sure you want to restore ${email}? The user will be set to inactive status.`)) return;
+    
+    try {
+        const data = await apiRequest(ADMIN_API_BASE + '/restore_user.php', {
+            body: { userId }
+        });
+        
+        if (data.success) {
+            showToast('User restored successfully. Status set to inactive.', 'success');
+            loadUsers();
+        }
+    } catch (error) {
+        showToast('Failed to restore user: ' + error.message, 'danger');
+    }
+}
+
+// Edit User Name Functions
+let editingUserId = null;
+
+function openEditNameModal(userId, currentName, email) {
+    editingUserId = userId;
+    document.getElementById('editNameUserEmail').textContent = email;
+    document.getElementById('userNameInput').value = currentName || '';
+    
+    const modal = new bootstrap.Modal(document.getElementById('editNameModal'));
+    modal.show();
+}
+
+async function saveUserName() {
+    if (!editingUserId) return;
+    
+    const newName = document.getElementById('userNameInput').value.trim();
+    
+    if (!newName) {
+        showToast('Name cannot be empty', 'warning');
+        return;
+    }
+    
+    try {
+        const data = await apiRequest(ADMIN_API_BASE + '/update_user_name.php', {
+            body: {
+                userId: editingUserId,
+                name: newName
+            }
+        });
+        
+        if (data.success) {
+            showToast('User name updated successfully', 'success');
+            bootstrap.Modal.getInstance(document.getElementById('editNameModal')).hide();
+            loadUsers();
+        }
+    } catch (error) {
+        showToast('Failed to update user name: ' + error.message, 'danger');
+    }
+}
+
+// Reset User Password
+async function resetUserPassword(userId, email) {
+    if (!confirmAction(`Send a password reset email to ${email}? The user will receive an email with instructions to reset their password.`)) return;
+    
+    try {
+        const data = await apiRequest(ADMIN_API_BASE + '/reset_user_password.php', {
+            body: { userId }
+        });
+        
+        if (data.success) {
+            showToast(data.message || 'Password reset email sent successfully', 'success');
+        }
+    } catch (error) {
+        showToast('Failed to send password reset email: ' + error.message, 'danger');
     }
 }
 
@@ -593,6 +678,93 @@ function formatDate(dateStr) {
     const date = new Date(dateStr);
     const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return date.toLocaleDateString('en-US', options);
+}
+
+// Show user actions menu (positioned outside table)
+function showUserActionsMenu(event, userId, userEmail, userName, userStatus, userRole, loginMethod) {
+    event.stopPropagation();
+    
+    const container = document.getElementById('dropdownMenuContainer');
+    const button = event.target.closest('button');
+    const buttonRect = button.getBoundingClientRect();
+    
+    // Build menu HTML
+    let menuHtml = '<ul class="dropdown-menu dropdown-menu-end show" style="display: block; position: static;">';
+    
+    if (userStatus === 'deleted') {
+        menuHtml += `
+            <li><a class="dropdown-item" href="#" onclick="restoreUser('${userId}', '${userEmail}'); hideUserActionsMenu(); return false;">
+                <i class="bi bi-arrow-counterclockwise me-2"></i> Restore User
+            </a></li>`;
+    } else {
+        menuHtml += `
+            <li><a class="dropdown-item" href="#" onclick="${userStatus === 'active' ? `updateUserStatus('${userId}', 'inactive')` : `updateUserStatus('${userId}', 'active')`}; hideUserActionsMenu(); return false;">
+                <i class="bi ${userStatus === 'active' ? 'bi-x-circle' : 'bi-check-circle'} me-2"></i> ${userStatus === 'active' ? 'Deactivate' : 'Activate'}
+            </a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#" onclick="openEditNameModal('${userId}', '${userName}', '${userEmail}'); hideUserActionsMenu(); return false;">
+                <i class="bi bi-pencil me-2"></i> Edit Name
+            </a></li>
+            ${loginMethod === 'email' 
+                ? `<li><a class="dropdown-item" href="#" onclick="resetUserPassword('${userId}', '${userEmail}'); hideUserActionsMenu(); return false;">
+                    <i class="bi bi-key me-2"></i> Reset Password
+                </a></li>`
+                : ''
+            }
+            <li><a class="dropdown-item" href="#" onclick="openMachineCodesModal('${userId}', '${userName || userEmail}'); hideUserActionsMenu(); return false;">
+                <i class="bi bi-gear me-2"></i> Manage Machine Codes
+            </a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="#" onclick="${userRole === 'user' ? `updateUserRole('${userId}', 'admin')` : `updateUserRole('${userId}', 'user')`}; hideUserActionsMenu(); return false;">
+                <i class="bi ${userRole === 'user' ? 'bi-shield-fill-check' : 'bi-person'} me-2"></i> ${userRole === 'user' ? 'Promote to Admin' : 'Demote to User'}
+            </a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item text-danger" href="#" onclick="deleteUser('${userId}', '${userEmail}'); hideUserActionsMenu(); return false;">
+                <i class="bi bi-trash me-2"></i> Delete User
+            </a></li>`;
+    }
+    
+    menuHtml += '</ul>';
+    
+    // Position menu - align to right edge of button
+    container.innerHTML = menuHtml;
+    container.style.display = 'block';
+    
+    // Calculate position (align dropdown to right edge of button)
+    const menuWidth = 200; // Approximate menu width
+    const leftPos = Math.max(10, buttonRect.right - menuWidth); // Ensure it doesn't go off-screen left
+    const topPos = buttonRect.bottom + 5; // Small gap below button
+    
+    container.style.left = leftPos + 'px';
+    container.style.top = topPos + 'px';
+    
+    // Adjust if menu would go off-screen right
+    setTimeout(() => {
+        const menuRect = container.getBoundingClientRect();
+        if (menuRect.right > window.innerWidth) {
+            container.style.left = (window.innerWidth - menuWidth - 10) + 'px';
+        }
+        // Adjust if menu would go off-screen bottom
+        if (menuRect.bottom > window.innerHeight) {
+            container.style.top = (buttonRect.top - menuRect.height - 5) + 'px';
+        }
+    }, 0);
+    
+    // Close menu when clicking outside
+    setTimeout(() => {
+        document.addEventListener('click', function closeMenu(e) {
+            if (!container.contains(e.target) && !button.contains(e.target)) {
+                hideUserActionsMenu();
+                document.removeEventListener('click', closeMenu);
+            }
+        }, { once: true });
+    }, 0);
+}
+
+function hideUserActionsMenu() {
+    const container = document.getElementById('dropdownMenuContainer');
+    container.style.display = 'none';
+    container.innerHTML = '';
 }
 </script>
 
