@@ -98,12 +98,12 @@ $currentPage = 'users';
                         <label class="form-label">Search or enter machine code:</label>
                         <div class="position-relative">
                             <input type="text" class="form-control" id="codeSearchInput" 
-                                   placeholder="Type to search or enter code (e.g., AA001001)" 
-                                   maxlength="8" autocomplete="off">
+                                   placeholder="Type to search or enter code (e.g., AA001001, TOG002020, 3I001003)" 
+                                   maxlength="9" autocomplete="off">
                             <div id="codeSuggestions" class="list-group position-absolute w-100 shadow-sm border rounded mt-1" 
                                  style="z-index: 1000; display: none; max-height: 200px; overflow-y: auto; background: white;"></div>
                         </div>
-                        <small class="text-muted">Format: 2 uppercase letters + 6 digits (e.g., AA001001)</small>
+                        <small class="text-muted">Format: 1-3 alphanumeric characters (A-Z, 0-9) + 6 digits (e.g., AA001001, TOG002020, 3I001003)</small>
                         <div class="mt-3">
                             <button class="btn btn-success" onclick="addMachineCode()">
                                 <i class="bi bi-plus"></i> Add Code
@@ -178,6 +178,12 @@ let currentUsers = [];
 let currentUserId = null;
 let allAvailableCodes = [];
 let userMachineCodes = [];
+let codesOffset = 0;
+let codesLimit = 50;
+let codesTotal = 0;
+let codesHasMore = false;
+let codesSearchTerm = '';
+let isLoadingCodes = false;
 
 // Load users from API
 async function loadUsers() {
@@ -412,6 +418,11 @@ async function openMachineCodesModal(userId, userName) {
     currentUserId = userId;
     document.getElementById('modalUserName').textContent = userName;
     
+    // Reset pagination state
+    codesOffset = 0;
+    codesSearchTerm = '';
+    allAvailableCodes = [];
+    
     // Clear search input and hide suggestions
     const searchInput = document.getElementById('codeSearchInput');
     if (searchInput) {
@@ -425,24 +436,54 @@ async function openMachineCodesModal(userId, userName) {
     
     // Load available codes and user's assigned codes
     await Promise.all([
-        loadAllMachineCodes(),
+        loadAllMachineCodes(true),
         loadUserMachineCodes(userId)
     ]);
 }
 
-async function loadAllMachineCodes() {
+async function loadAllMachineCodes(reset = false) {
+    if (isLoadingCodes) return;
+    
+    if (reset) {
+        codesOffset = 0;
+        allAvailableCodes = [];
+    }
+    
+    isLoadingCodes = true;
+    
     try {
         const data = await apiRequest(ADMIN_API_BASE + '/get_all_machine_codes.php', {
-            body: {}
+            body: {
+                limit: codesLimit,
+                offset: codesOffset,
+                search: codesSearchTerm
+            }
         });
         
         if (data.success) {
-            allAvailableCodes = data.data || [];
-            // Codes are now available for search/autocomplete
+            if (reset) {
+                allAvailableCodes = data.data || [];
+            } else {
+                allAvailableCodes = allAvailableCodes.concat(data.data || []);
+            }
+            
+            codesTotal = data.total || 0;
+            codesHasMore = data.hasMore || false;
+            codesOffset = allAvailableCodes.length;
+            
+            // Update suggestions display if modal is open
+            const input = document.getElementById('codeSearchInput');
+            if (input && input.value) {
+                showCodeSuggestions(input.value);
+            }
         }
     } catch (error) {
         console.error('Failed to load machine codes:', error);
-        showToast('Failed to load available machine codes', 'warning');
+        if (reset) {
+            showToast('Failed to load available machine codes', 'warning');
+        }
+    } finally {
+        isLoadingCodes = false;
     }
 }
 
@@ -507,9 +548,9 @@ async function addMachineCode() {
         return;
     }
     
-    // Validate format: 2 uppercase letters + 6 digits
-    if (!/^[A-Z]{2}[0-9]{6}$/.test(code)) {
-        showToast('Invalid machine code format. Expected: 2 uppercase letters + 6 digits (e.g., AA001001)', 'danger');
+    // Validate format: 1-3 alphanumeric characters + 6 digits (matches InvoiceParser format)
+    if (!/^[A-Z0-9]{1,3}[0-9]{6}$/.test(code)) {
+        showToast('Invalid machine code format. Expected: 1-3 alphanumeric characters (A-Z, 0-9) + 6 digits (e.g., AA001001, TOG002020, 3I001003)', 'danger');
         return;
     }
     
@@ -540,38 +581,46 @@ async function addMachineCode() {
     }
 }
 
-function showCodeSuggestions(searchTerm) {
+async function showCodeSuggestions(searchTerm) {
     const suggestionsDiv = document.getElementById('codeSuggestions');
     const upperTerm = (searchTerm || '').toUpperCase();
     
-    // If no search term, show all available codes (limited to 20 for performance)
+    // Reset and load if search term changed
+    if (codesSearchTerm !== upperTerm) {
+        codesSearchTerm = upperTerm;
+        await loadAllMachineCodes(true);
+    }
+    
+    // Filter codes that match the search term (from loaded codes)
     let filtered;
     if (!upperTerm || upperTerm.length === 0) {
-        filtered = allAvailableCodes.slice(0, 20);
+        filtered = allAvailableCodes;
     } else {
-        // Filter codes that match the search term
         filtered = allAvailableCodes.filter(code => 
             code.toUpperCase().includes(upperTerm)
-        ).slice(0, 20);
+        );
     }
     
     // If no matches found and user has typed something, check if it's a valid new code
     if (filtered.length === 0 && upperTerm.length > 0) {
         // Show option to add new code if format is valid
-        if (/^[A-Z]{2}[0-9]{0,6}$/.test(upperTerm)) {
+        if (/^[A-Z0-9]{1,3}[0-9]{0,6}$/.test(upperTerm)) {
             suggestionsDiv.innerHTML = `
                 <a href="#" class="list-group-item list-group-item-action" onclick="selectCode('${upperTerm}'); return false;">
                     <i class="bi bi-plus-circle me-2"></i> Add new code: <strong>${upperTerm}</strong>
                 </a>
             `;
             suggestionsDiv.style.display = 'block';
+            // Setup scroll listener for infinite scroll
+            setupCodeSuggestionsScroll();
+            return;
         } else {
             hideCodeSuggestions();
+            return;
         }
-        return;
     }
     
-    // Show filtered or all codes
+    // Show filtered codes
     if (filtered.length === 0) {
         hideCodeSuggestions();
         return;
@@ -587,8 +636,67 @@ function showCodeSuggestions(searchTerm) {
                 <i class="bi ${icon} me-2"></i> ${code} ${isAssigned ? '<small>(assigned)</small>' : ''}
             </a>
         `;
-    }).join('');
+    }).join('') + (codesHasMore ? `
+        <div class="list-group-item text-center py-2" id="codesLoadingMore" style="display: none;">
+            <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <small class="text-muted">Loading more codes...</small>
+        </div>
+    ` : '');
+    
     suggestionsDiv.style.display = 'block';
+    
+    // Setup scroll listener for infinite scroll
+    setupCodeSuggestionsScroll();
+}
+
+let codeScrollTimeout = null;
+
+function setupCodeSuggestionsScroll() {
+    const suggestionsDiv = document.getElementById('codeSuggestions');
+    if (!suggestionsDiv) return;
+    
+    // Remove existing listener
+    suggestionsDiv.removeEventListener('scroll', handleCodeSuggestionsScroll);
+    
+    // Add scroll listener with throttling
+    suggestionsDiv.addEventListener('scroll', () => {
+        // Throttle scroll events (check every 200ms)
+        clearTimeout(codeScrollTimeout);
+        codeScrollTimeout = setTimeout(handleCodeSuggestionsScroll, 200);
+    }, { passive: true });
+}
+
+function handleCodeSuggestionsScroll() {
+    const suggestionsDiv = document.getElementById('codeSuggestions');
+    if (!suggestionsDiv || isLoadingCodes || !codesHasMore) return;
+    
+    // Check if user scrolled near bottom (within 50px)
+    const scrollTop = suggestionsDiv.scrollTop;
+    const scrollHeight = suggestionsDiv.scrollHeight;
+    const clientHeight = suggestionsDiv.clientHeight;
+    const distanceFromBottom = scrollHeight - (scrollTop + clientHeight);
+    
+    if (distanceFromBottom < 50) {
+        // Show loading indicator
+        const loadingMore = document.getElementById('codesLoadingMore');
+        if (loadingMore) {
+            loadingMore.style.display = 'block';
+        }
+        
+        // Load more codes
+        loadAllMachineCodes(false).then(() => {
+            if (loadingMore) {
+                loadingMore.style.display = 'none';
+            }
+            // Refresh suggestions display
+            const input = document.getElementById('codeSearchInput');
+            if (input) {
+                showCodeSuggestions(input.value);
+            }
+        });
+    }
 }
 
 function hideCodeSuggestions() {
@@ -634,17 +742,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const codeSearchInput = document.getElementById('codeSearchInput');
     if (codeSearchInput) {
         // Show all codes when input is focused/clicked
-        codeSearchInput.addEventListener('focus', (e) => {
-            if (allAvailableCodes.length > 0) {
-                showCodeSuggestions(e.target.value || '');
+        codeSearchInput.addEventListener('focus', async (e) => {
+            // Load codes if not loaded yet
+            if (allAvailableCodes.length === 0) {
+                await loadAllMachineCodes(true);
             }
+            showCodeSuggestions(e.target.value || '');
         });
         
         // Auto-uppercase as user types
         codeSearchInput.addEventListener('input', (e) => {
             let value = e.target.value.toUpperCase();
-            // Only allow letters and numbers, max 8 chars
-            value = value.replace(/[^A-Z0-9]/g, '').substring(0, 8);
+            // Only allow letters and numbers, max 9 chars (for codes like TOG002020)
+            value = value.replace(/[^A-Z0-9]/g, '').substring(0, 9);
             e.target.value = value;
             
             // Show suggestions (all if empty, filtered if has value)

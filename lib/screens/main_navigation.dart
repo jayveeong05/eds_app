@@ -15,15 +15,6 @@ class MainNavigation extends StatefulWidget {
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 2; // Start with Home (center)
 
-  // All screens for bottom navigation
-  final List<Widget> _screens = [
-    const PromotionsScreen(),
-    const InvoicesScreen(),
-    const HomeScreen(), // Center - Home
-    const KnowledgeBaseScreen(), // Knowledge Base
-    const ProfileScreen(),
-  ];
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -37,7 +28,16 @@ class _MainNavigationState extends State<MainNavigation> {
       body: Stack(
         children: [
           // Main content
-          IndexedStack(index: _selectedIndex, children: _screens),
+          IndexedStack(
+            index: _selectedIndex,
+            children: [
+              const PromotionsScreen(),
+              const InvoicesScreen(),
+              const HomeScreen(),
+              const KnowledgeBaseScreen(),
+              const ProfileScreen(),
+            ],
+          ),
           // Floating bottom nav
           Positioned(
             left: 0,

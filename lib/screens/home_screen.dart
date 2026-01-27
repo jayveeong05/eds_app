@@ -38,6 +38,14 @@ class _HomeScreenState extends State<HomeScreen> {
     _fetchMachineCodes();
   }
 
+  // Refresh all data
+  Future<void> _refreshData() async {
+    await Future.wait([
+      _fetchNews(),
+      _fetchMachineCodes(),
+    ]);
+  }
+
   void _initializePageController() {
     final initialPage = (_virtualPageCount / 2).floor();
     _pageController = PageController(initialPage: initialPage);
@@ -45,6 +53,11 @@ class _HomeScreenState extends State<HomeScreen> {
       _currentPage = 0;
     });
     _startAutoScroll();
+  }
+
+  // Refresh data when screen becomes visible (when user navigates to home tab)
+  void refreshOnVisible() {
+    _refreshData();
   }
 
   void _startAutoScroll() {
@@ -161,8 +174,12 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
+        child: RefreshIndicator(
+          onRefresh: _refreshData,
+          color: theme.colorScheme.primary,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(), // Enable pull-to-refresh even when content fits
+            child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header with EDS Logo
@@ -444,6 +461,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                     ),
             ],
+          ),
           ),
         ),
       ),

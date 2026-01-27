@@ -35,13 +35,13 @@ if (empty($data->userId) || empty($data->code)) {
 $middleware = new AdminMiddleware();
 $admin = $middleware->verifyAdmin($data->idToken);
 
-// Validate machine code format: 2 uppercase letters + 6 digits (e.g., AA001001)
+// Validate machine code format: 1-3 alphanumeric characters + 6 digits (e.g., AA001001, TOG002020, 3I001003)
 $code = strtoupper(trim($data->code));
-if (!preg_match('/^[A-Z]{2}[0-9]{6}$/', $code)) {
+if (!preg_match('/^[A-Z0-9]{1,3}[0-9]{6}$/', $code)) {
     http_response_code(400);
     echo json_encode([
         'success' => false,
-        'message' => 'Invalid machine code format. Expected format: 2 uppercase letters + 6 digits (e.g., AA001001)'
+        'message' => 'Invalid machine code format. Expected format: 1-3 alphanumeric characters (A-Z, 0-9) + 6 digits (e.g., AA001001, TOG002020, 3I001003)'
     ]);
     exit;
 }

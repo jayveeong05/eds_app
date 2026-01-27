@@ -17,7 +17,9 @@ try {
     $database = new Database();
     $db = $database->getConnection();
     
-    // Optional search parameter
+    // Get pagination and search parameters
+    $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 50;
+    $offset = isset($_GET['offset']) ? (int)$_GET['offset'] : 0;
     $search = isset($_GET['search']) ? trim($_GET['search']) : '';
     
     // Build query
@@ -33,7 +35,8 @@ try {
     }
     
     // Order by most recent first
-    $query .= " ORDER BY created_at DESC";
+    $query .= " ORDER BY created_at DESC 
+                LIMIT :limit OFFSET :offset";
     
     // Execute query
     $stmt = $db->prepare($query);
@@ -41,10 +44,11 @@ try {
     foreach ($params as $key => $value) {
         $stmt->bindValue($key, $value);
     }
-    
+    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
     
-    // Fetch all results
+    // Fetch results
     $items = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         // Convert timestamp to ISO 8601 format with timezone
@@ -56,9 +60,25 @@ try {
         $items[] = $row;
     }
     
+    // Get total count (with same filters)
+    $countQuery = "SELECT COUNT(*) as total FROM knowledge_base";
+    if (!empty($search)) {
+        $countQuery .= " WHERE (LOWER(title) LIKE :search OR LOWER(subtitle) LIKE :search)";
+    }
+    $countStmt = $db->prepare($countQuery);
+    if (!empty($search)) {
+        $countStmt->bindValue(':search', '%' . strtolower($search) . '%');
+    }
+    $countStmt->execute();
+    $total = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+    
     echo json_encode([
         'success' => true,
-        'data' => $items
+        'data' => $items,
+        'total' => (int)$total,
+        'limit' => $limit,
+        'offset' => $offset,
+        'hasMore' => ($offset + count($items)) < $total
     ]);
     
 } catch (Exception $e) {

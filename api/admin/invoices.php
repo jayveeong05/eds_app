@@ -24,8 +24,8 @@ $currentPage = 'invoices';
             <h6 class="text-eds-primary"><strong>Step 1:</strong> Select Invoice Files</h6>
             <input type="file" class="form-control" id="invoiceFiles" multiple accept=".pdf">
             <small class="text-muted">
-                Expected format: <code>AA001001-Jan.pdf</code>, <code>TOG002020-Dec.pdf</code>, <code>3I001003-Dec.pdf</code>, etc.<br>
-                <strong>Note:</strong> New uploads replace old data for the same code+month (max 12 records per machine)
+                Expected format: <code>AA001001-Jan-2025-001.pdf</code>, <code>TOG002020-Dec-2025-002.pdf</code>, <code>3I001003-Dec-2024-IV001.pdf</code>, etc.<br>
+                <strong>Note:</strong> All files are kept (no replacement). Multiple invoices per code+month are supported with different invoice numbers.
             </small>
             <div id="fileCount" class="mt-2 text-muted"></div>
         </div>
@@ -102,12 +102,15 @@ function validateInvoiceFilename(filename) {
     // Split by hyphen
     const parts = name.split('-');
     
-    if (parts.length !== 2) {
-        return { valid: false, reason: 'Must have format: CODE-MONTH.pdf' };
+    // Must have exactly 4 parts: CODE-MONTH-YEAR-INVOICENUMBER
+    if (parts.length !== 4) {
+        return { valid: false, reason: 'Must have format: CODE-MONTH-YEAR-INVOICENUMBER.pdf (e.g., AA001001-Jan-2025-001.pdf)' };
     }
     
     const code = parts[0].trim();
     const monthAbbr = parts[1].trim();
+    const year = parts[2].trim();
+    const invoiceNumber = parts[3].trim();
     
     // Validate code format: AA001001, TOG002020, 3I001003 (1-3 alphanumeric + 6 digits)
     if (!/^[A-Z0-9]{1,3}[0-9]{6}$/.test(code)) {
@@ -117,6 +120,20 @@ function validateInvoiceFilename(filename) {
     // Validate month abbreviation
     if (!VALID_MONTHS[monthAbbr]) {
         return { valid: false, reason: 'Month must be 3-letter abbreviation (Jan, Feb, Mar, etc.)' };
+    }
+    
+    // Validate year (4 digits, between 2000-2100)
+    if (!/^\d{4}$/.test(year)) {
+        return { valid: false, reason: 'Year must be 4 digits (e.g., 2025)' };
+    }
+    const yearNum = parseInt(year);
+    if (yearNum < 2000 || yearNum > 2100) {
+        return { valid: false, reason: 'Year must be between 2000 and 2100' };
+    }
+    
+    // Validate invoice number (alphanumeric, at least 1 character)
+    if (!invoiceNumber || !/^[A-Z0-9]+$/i.test(invoiceNumber)) {
+        return { valid: false, reason: 'Invoice number must be alphanumeric (e.g., 001, IV001, 123)' };
     }
     
     return { valid: true };

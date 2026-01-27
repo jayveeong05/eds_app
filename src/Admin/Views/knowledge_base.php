@@ -78,6 +78,19 @@ $currentPage = 'knowledge_base';
                 </tbody>
             </table>
         </div>
+        <!-- Auto-load indicator (shows when loading more) -->
+        <div class="text-center mt-3 py-2" id="loadingMoreIndicator" style="display: none;">
+            <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <span class="text-muted">Loading more documents...</span>
+        </div>
+        <!-- End of list indicator -->
+        <div class="text-center mt-3 py-2" id="endOfListIndicator" style="display: none;">
+            <small class="text-muted">
+                <i class="bi bi-check-circle"></i> All documents loaded
+            </small>
+        </div>
     </div>
 </div>
 
@@ -124,9 +137,17 @@ $currentPage = 'knowledge_base';
 </div>
 
 <script>
+let allDocuments = [];
+let currentOffset = 0;
+let currentLimit = 50;
+let currentSearch = '';
+let totalDocuments = 0;
+let isLoadingMore = false;
+
 // Load documents on page load
 document.addEventListener('DOMContentLoaded', function() {
-    loadDocuments();
+    loadDocuments(true);
+    setupInfiniteScroll();
 });
 
 // Handle form submission
@@ -150,7 +171,7 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
         if (data.success) {
             showToast('Document uploaded successfully!', 'success');
             document.getElementById('uploadForm').reset();
-            loadDocuments(); // Reload the table
+            loadDocuments(true); // Reload the table from beginning
         } else {
             showToast('Upload failed: ' + (data.message || 'Unknown error'), 'danger');
         }
@@ -163,21 +184,123 @@ document.getElementById('uploadForm').addEventListener('submit', async function(
     }
 });
 
-// Load documents from API
-async function loadDocuments() {
+// Setup infinite scroll - auto-load when user scrolls near bottom
+function setupInfiniteScroll() {
+    let scrollTimeout;
+    
+    window.addEventListener('scroll', function() {
+        // Throttle scroll events (check every 200ms)
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(function() {
+            checkScrollPosition();
+        }, 200);
+    }, { passive: true });
+}
+
+// Check if user has scrolled near the bottom
+function checkScrollPosition() {
+    // Don't check if already loading or no more documents to load
+    if (isLoadingMore || allDocuments.length >= totalDocuments) {
+        return;
+    }
+    
+    // Calculate scroll position
+    const windowHeight = window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+    
+    // Trigger load when user is within 300px of bottom
+    const threshold = 300;
+    const distanceFromBottom = documentHeight - (scrollTop + windowHeight);
+    
+    if (distanceFromBottom < threshold) {
+        loadDocuments(false);
+    }
+}
+
+// Load documents from API (reset = true to start from beginning, false to append)
+async function loadDocuments(reset = false) {
+    if (reset) {
+        currentOffset = 0;
+        allDocuments = [];
+        currentSearch = document.getElementById('searchInput').value.trim();
+    }
+    
+    if (isLoadingMore) return; // Prevent multiple simultaneous requests
+    isLoadingMore = true;
+    
     try {
-        const response = await fetch(API_BASE + '/get_knowledge_base.php');
+        const searchValue = reset ? currentSearch : currentSearch;
+        
+        // Show loading state
+        if (reset) {
+            document.getElementById('documentsTableBody').innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center">
+                        <div class="spinner-border text-eds-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            document.getElementById('loadingMoreIndicator').style.display = 'none';
+            document.getElementById('endOfListIndicator').style.display = 'none';
+        } else {
+            // Show loading indicator at bottom when loading more
+            document.getElementById('loadingMoreIndicator').style.display = 'block';
+            document.getElementById('endOfListIndicator').style.display = 'none';
+        }
+        
+        const url = new URL(API_BASE + '/get_knowledge_base.php');
+        url.searchParams.append('limit', currentLimit);
+        url.searchParams.append('offset', currentOffset);
+        if (searchValue) {
+            url.searchParams.append('search', searchValue);
+        }
+        
+        const response = await fetch(url);
         const data = await response.json();
         
         if (data.success) {
-            displayDocuments(data.data);
+            totalDocuments = data.total;
+            
+            if (reset) {
+                allDocuments = data.data;
+            } else {
+                // Append new documents
+                allDocuments = allDocuments.concat(data.data);
+            }
+            
+            displayDocuments(allDocuments);
+            
+            // Show/hide loading indicators
+            const hasMore = allDocuments.length < totalDocuments;
+            document.getElementById('loadingMoreIndicator').style.display = 'none';
+            document.getElementById('endOfListIndicator').style.display = hasMore ? 'none' : 'block';
+            
+            if (hasMore) {
+                currentOffset = allDocuments.length;
+            }
         } else {
             showToast('Failed to load documents', 'danger');
+            if (reset) {
+                document.getElementById('documentsTableBody').innerHTML = 
+                    '<tr><td colspan="4" class="text-center text-danger">Failed to load documents</td></tr>';
+            }
+            document.getElementById('loadingMoreIndicator').style.display = 'none';
+            document.getElementById('endOfListIndicator').style.display = 'none';
         }
     } catch (error) {
         console.error('Load error:', error);
-        document.getElementById('documentsTableBody').innerHTML = 
-            '<tr><td colspan="4" class="text-center text-danger">Failed to load documents</td></tr>';
+        if (reset) {
+            document.getElementById('documentsTableBody').innerHTML = 
+                '<tr><td colspan="4" class="text-center text-danger">Failed to load documents</td></tr>';
+        }
+        document.getElementById('loadingMoreIndicator').style.display = 'none';
+        document.getElementById('endOfListIndicator').style.display = 'none';
+    } finally {
+        isLoadingMore = false;
+        document.getElementById('loadingMoreIndicator').style.display = 'none';
     }
 }
 
@@ -186,7 +309,7 @@ function displayDocuments(documents) {
     const tbody = document.getElementById('documentsTableBody');
     
     if (documents.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No documents found</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">No documents found${currentSearch ? ` for "${currentSearch}"` : ''}</td></tr>`;
         return;
     }
     
@@ -196,15 +319,52 @@ function displayDocuments(documents) {
             <td>${escapeHtml(doc.subtitle || '-')}</td>
             <td>${formatDate(doc.created_at)}</td>
             <td>
-                <button class="btn btn-sm btn-primary me-1" onclick="editDocument('${doc.id}', '${escapeHtml(doc.title)}', '${escapeHtml(doc.subtitle || '')}', '${doc.file_url}')">
-                    <i class="bi bi-pencil"></i> Edit
-                </button>
-                <button class="btn btn-sm btn-danger" onclick="deleteDocument('${doc.id}', '${escapeHtml(doc.title)}')">
-                    <i class="bi bi-trash"></i> Delete
-                </button>
+                <div class="btn-group" role="group">
+                    <button class="btn btn-sm btn-info" onclick="viewDocument('${doc.file_url}', '${escapeHtml(doc.title)}')" title="View Document">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-primary" onclick="editDocument('${doc.id}', '${escapeHtml(doc.title)}', '${escapeHtml(doc.subtitle || '')}', '${doc.file_url}')" title="Edit Document">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteDocument('${doc.id}', '${escapeHtml(doc.title)}')" title="Delete Document">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
             </td>
         </tr>
     `).join('');
+}
+
+// View document - opens PDF in new tab
+async function viewDocument(fileUrl, documentTitle) {
+    if (!fileUrl) {
+        showToast('Document file URL not available', 'warning');
+        return;
+    }
+    
+    try {
+        // Get presigned URL from backend
+        const response = await fetch('/api/get_presigned_url.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                's3_key': fileUrl
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.url) {
+            // Open PDF in new tab
+            window.open(data.url, '_blank');
+        } else {
+            showToast('Failed to load document: ' + (data.message || 'Unknown error'), 'danger');
+        }
+    } catch (error) {
+        showToast('Failed to view document: ' + error.message, 'danger');
+    }
 }
 
 // Delete document
@@ -228,7 +388,7 @@ async function deleteDocument(id, title) {
         
         if (data.success) {
             showToast(data.message || 'Document deleted successfully', 'success');
-            loadDocuments(); // Reload the table
+            loadDocuments(true); // Reload the table from beginning
         } else {
             showToast('Delete failed: ' + (data.message || 'Unknown error'), 'danger');
         }
@@ -315,7 +475,7 @@ async function saveEdit() {
         if (data.success) {
             showToast('Document updated successfully!', 'success');
             bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
-            loadDocuments(); // Reload the table
+            loadDocuments(true); // Reload the table from beginning
         } else {
             showToast('Update failed: ' + (data.message || 'Unknown error'), 'danger');
         }
@@ -327,21 +487,20 @@ async function saveEdit() {
     }
 }
 
-// Search functionality
+// Search functionality - reload from API with search
+document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        loadDocuments(true);
+    }
+});
+
+// Also trigger search on input change with debounce
+let searchTimeout;
 document.getElementById('searchInput').addEventListener('input', function(e) {
-    const searchTerm = e.target.value.toLowerCase();
-    const rows = document.querySelectorAll('#documentsTableBody tr');
-    
-    rows.forEach(row => {
-        const title = row.cells[0]?.textContent.toLowerCase() || '';
-        const subtitle = row.cells[1]?.textContent.toLowerCase() || '';
-        
-        if (title.includes(searchTerm) || subtitle.includes(searchTerm)) {
-            row.style.display = '';
-        } else {
-            row.style.display = 'none';
-        }
-    });
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(function() {
+        loadDocuments(true);
+    }, 500); // Wait 500ms after user stops typing
 });
 
 // Helper: Format date - properly handles timezone-less timestamps

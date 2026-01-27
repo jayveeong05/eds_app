@@ -112,6 +112,39 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
     }
   }
 
+  // Format month with year for display
+  String _formatMonthYear(Map<String, dynamic> invoice) {
+    final month = invoice['month'] ?? '';
+    // Use invoice_year from API (stores actual invoice year, not upload year)
+    // Falls back to year field, then to extracting from created_at
+    if (invoice['invoice_year'] != null) {
+      return '$month ${invoice['invoice_year']}';
+    }
+    if (invoice['year'] != null) {
+      return '$month ${invoice['year']}';
+    }
+    try {
+      final dateStr = invoice['created_at'];
+      if (dateStr != null) {
+        final date = DateTime.parse(dateStr);
+        return '$month ${date.year}';
+      }
+    } catch (e) {
+      // Fallback to just month if parsing fails
+    }
+    return month;
+  }
+
+  // Format invoice number for display
+  String _formatInvoiceNumber(Map<String, dynamic> invoice) {
+    // Show invoice number if available, otherwise fall back to upload date
+    if (invoice['invoice_number'] != null && invoice['invoice_number'].toString().isNotEmpty) {
+      return 'Invoice #: ${invoice['invoice_number']}';
+    }
+    // Fallback to upload date if invoice number is not available
+    return 'Uploaded: ${_formatDate(invoice['created_at'])}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -262,14 +295,14 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
                                 ),
                               ),
                               title: Text(
-                                invoice['month'],
+                                _formatMonthYear(invoice),
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                 ),
                               ),
                               subtitle: Text(
-                                'Uploaded: ${_formatDate(invoice['created_at'])}',
+                                _formatInvoiceNumber(invoice),
                                 style: const TextStyle(fontSize: 12),
                               ),
                               trailing: IconButton(
@@ -279,13 +312,13 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
                                 ),
                                 onPressed: () => _openPdf(
                                   invoice['pdf_url'],
-                                  invoice['month'],
+                                  _formatMonthYear(invoice),
                                 ),
                                 tooltip: 'Open PDF',
                               ),
                               onTap: () => _openPdf(
                                 invoice['pdf_url'],
-                                invoice['month'],
+                                _formatMonthYear(invoice),
                               ),
                             ),
                           );

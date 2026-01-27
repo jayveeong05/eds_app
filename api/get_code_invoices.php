@@ -100,11 +100,125 @@ try {
         }
     }
     
-    // Get all invoices for this code, sorted by most recently created/updated
-    $query = "SELECT id::text, code, month, file_url, created_at
-              FROM invoices 
-              WHERE code = :code
-              ORDER BY created_at DESC";
+    // Get latest year's invoice for each month (prefers current year if exists, otherwise latest available)
+    // Uses invoice_year column if available, otherwise falls back to extracting from created_at
+    // Check which columns exist
+    try {
+        $checkColumnsQuery = "SELECT column_name FROM information_schema.columns 
+                              WHERE table_name = 'invoices' 
+                              AND column_name IN ('invoice_year', 'invoice_number')";
+        $checkColumnsStmt = $db->query($checkColumnsQuery);
+        $existingColumns = [];
+        while ($row = $checkColumnsStmt->fetch(PDO::FETCH_ASSOC)) {
+            $existingColumns[] = $row['column_name'];
+        }
+        $hasInvoiceYearColumn = in_array('invoice_year', $existingColumns);
+        $hasInvoiceNumberColumn = in_array('invoice_number', $existingColumns);
+    } catch (Exception $e) {
+        $hasInvoiceYearColumn = false;
+        $hasInvoiceNumberColumn = false;
+    }
+    
+    if ($hasInvoiceYearColumn) {
+        // Use invoice_year column (preferred - stores actual invoice year from filename, not upload year)
+        // Get ALL invoices for the latest year per month (not just one invoice per month)
+        $query = "
+            WITH latest_year_per_month AS (
+                -- Find the latest invoice_year for each month
+                SELECT 
+                    month,
+                    MAX(invoice_year) as latest_year
+                FROM invoices 
+                WHERE code = :code
+                GROUP BY month
+            ),
+            latest_invoices AS (
+                -- Get all invoices that match the latest year for each month
+                SELECT 
+                    i.id::text,
+                    i.code,
+                    i.month,
+                    i.file_url,
+                    i.created_at,
+                    i.invoice_year,
+                    i.invoice_number
+                FROM invoices i
+                INNER JOIN latest_year_per_month lypm 
+                    ON i.month = lypm.month 
+                    AND i.invoice_year = lypm.latest_year
+                WHERE i.code = :code
+            )
+            SELECT id, code, month, file_url, created_at, invoice_year::integer as invoice_year, invoice_number
+            FROM latest_invoices
+            ORDER BY 
+                CASE month
+                    WHEN 'January' THEN 1
+                    WHEN 'February' THEN 2
+                    WHEN 'March' THEN 3
+                    WHEN 'April' THEN 4
+                    WHEN 'May' THEN 5
+                    WHEN 'June' THEN 6
+                    WHEN 'July' THEN 7
+                    WHEN 'August' THEN 8
+                    WHEN 'September' THEN 9
+                    WHEN 'October' THEN 10
+                    WHEN 'November' THEN 11
+                    WHEN 'December' THEN 12
+                END,
+                created_at DESC
+        ";
+    } else {
+        // Fallback: extract year from created_at (for backward compatibility during migration)
+        // Get ALL invoices for the latest year per month (not just one invoice per month)
+        $invoiceNumberSelect = $hasInvoiceNumberColumn ? "i.invoice_number" : "'001' as invoice_number";
+        $invoiceNumberField = $hasInvoiceNumberColumn ? "invoice_number" : "'001' as invoice_number";
+        
+        $query = "
+            WITH latest_year_per_month AS (
+                -- Find the latest year (from created_at) for each month
+                SELECT 
+                    month,
+                    MAX(EXTRACT(YEAR FROM created_at))::integer as latest_year
+                FROM invoices 
+                WHERE code = :code
+                GROUP BY month
+            ),
+            latest_invoices AS (
+                -- Get all invoices that match the latest year for each month
+                SELECT 
+                    i.id::text,
+                    i.code,
+                    i.month,
+                    i.file_url,
+                    i.created_at,
+                    EXTRACT(YEAR FROM i.created_at)::integer as invoice_year,
+                    " . $invoiceNumberSelect . "
+                FROM invoices i
+                INNER JOIN latest_year_per_month lypm 
+                    ON i.month = lypm.month 
+                    AND EXTRACT(YEAR FROM i.created_at) = lypm.latest_year
+                WHERE i.code = :code
+            )
+            SELECT id, code, month, file_url, created_at, invoice_year, " . $invoiceNumberField . "
+            FROM latest_invoices
+            ORDER BY 
+                CASE month
+                    WHEN 'January' THEN 1
+                    WHEN 'February' THEN 2
+                    WHEN 'March' THEN 3
+                    WHEN 'April' THEN 4
+                    WHEN 'May' THEN 5
+                    WHEN 'June' THEN 6
+                    WHEN 'July' THEN 7
+                    WHEN 'August' THEN 8
+                    WHEN 'September' THEN 9
+                    WHEN 'October' THEN 10
+                    WHEN 'November' THEN 11
+                    WHEN 'December' THEN 12
+                END,
+                created_at DESC
+        ";
+    }
     
     $stmt = $db->prepare($query);
     $stmt->bindParam(':code', $data->code);
@@ -127,13 +241,26 @@ try {
         // Generate presigned URL (valid for 1 hour)
         $pdfUrl = $s3->getPresignedUrl(AWS_BUCKET, $row['file_url'], 3600);
         
-        $invoices[] = [
+        // Use invoice_year from database (actual invoice year, not upload year)
+        // Falls back to extracting from created_at if invoice_year column doesn't exist
+        $invoiceYear = isset($row['invoice_year']) ? (int)$row['invoice_year'] : date('Y', strtotime($row['created_at']));
+        
+        $invoice = [
             'id' => $row['id'],
             'code' => $row['code'],
             'month' => $row['month'],
+            'invoice_year' => $invoiceYear,  // Actual invoice year (from filename)
+            'year' => $invoiceYear,  // Alias for backward compatibility
             'pdf_url' => $pdfUrl,
             'created_at' => $row['created_at']
         ];
+        
+        // Add invoice_number if available
+        if (isset($row['invoice_number'])) {
+            $invoice['invoice_number'] = $row['invoice_number'];
+        }
+        
+        $invoices[] = $invoice;
     }
     
     http_response_code(200);

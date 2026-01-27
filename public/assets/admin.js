@@ -79,6 +79,82 @@ function confirmAction(message) {
     return confirm(message);
 }
 
+// Convert technical error messages to user-friendly messages
+function getUserFriendlyError(errorMessage) {
+    if (!errorMessage) {
+        return 'An unknown error occurred. Please try again.';
+    }
+    
+    const message = errorMessage.toString();
+    
+    // Network/Connection errors
+    if (message.includes('Error (0)') || message.includes('Failed to fetch') || message.includes('NetworkError')) {
+        return 'Unable to connect to the server. Please check your internet connection and try again.';
+    }
+    
+    // HTTP 403 - Authentication/Authorization errors
+    if (message.includes('Error (403)') || message.includes('403')) {
+        if (message.includes('InvalidAccessKeyId') || message.includes('InvalidAccessKey')) {
+            return 'Server configuration error: Invalid credentials. Please contact your system administrator.';
+        }
+        if (message.includes('AccessDenied') || message.includes('Forbidden')) {
+            return 'Access denied. You do not have permission to upload files. Please contact your administrator.';
+        }
+        return 'Access denied. Please check your permissions or contact your administrator.';
+    }
+    
+    // HTTP 503 - Service Unavailable
+    if (message.includes('Error (503)') || message.includes('503') || message.includes('Service Unavailable')) {
+        return 'The upload service is temporarily unavailable. Please try again in a few moments.';
+    }
+    
+    // HTTP 500 - Server errors
+    if (message.includes('Error (500)') || message.includes('500') || message.includes('Internal Server Error')) {
+        return 'A server error occurred. Please try again later or contact support if the problem persists.';
+    }
+    
+    // HTTP 400 - Bad Request
+    if (message.includes('Error (400)') || message.includes('400') || message.includes('Bad Request')) {
+        return 'Invalid request. Please check the file format and try again.';
+    }
+    
+    // File size errors
+    if (message.includes('too large') || message.includes('exceeds') || message.includes('size limit')) {
+        return 'File is too large. Please choose a smaller file.';
+    }
+    
+    // File type errors
+    if (message.includes('file type') || message.includes('not allowed') || message.includes('invalid format')) {
+        return 'File type not supported. Please upload a PDF file.';
+    }
+    
+    // S3 specific errors
+    if (message.includes('S3') || message.includes('AWS')) {
+        if (message.includes('bucket') || message.includes('Bucket')) {
+            return 'Storage service error. Please try again or contact support.';
+        }
+        if (message.includes('timeout') || message.includes('Timeout')) {
+            return 'Upload timed out. The file may be too large or your connection is slow. Please try again.';
+        }
+        return 'Storage service error. Please try again.';
+    }
+    
+    // Timeout errors
+    if (message.includes('timeout') || message.includes('Timeout') || message.includes('timed out')) {
+        return 'Upload timed out. Please check your internet connection and try again.';
+    }
+    
+    // Generic upload failed
+    if (message.includes('Upload failed') || message.includes('upload failed')) {
+        return 'File upload failed. Please check your connection and try again.';
+    }
+    
+    // If we can't identify the error, return a generic friendly message
+    // But still log the technical error for debugging
+    console.warn('Unrecognized error format:', message);
+    return 'File upload failed. Please try again. If the problem persists, contact support.';
+}
+
 // Make API request with error handling
 async function apiRequest(url, options = {}) {
     const token = await getAuthToken();

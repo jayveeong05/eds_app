@@ -43,14 +43,17 @@ CREATE TABLE IF NOT EXISTS news (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Invoices Table (Machine Code-Based System with Replacement Strategy)
--- Supports bulk uploads with filename parsing (e.g., AA001001-Jan.pdf)
--- Each machine code has max 12 records (one per month)
+-- Invoices Table (Machine Code-Based System)
+-- Supports bulk uploads with filename parsing (e.g., AA001001-Jan-2025-001.pdf)
+-- Format: CODE-MONTH-YEAR-INVOICENUMBER.pdf
+-- Supports multiple invoices per code+month+year with different invoice numbers
 -- Validation handled in application code (InvoiceParser.php)
 CREATE TABLE IF NOT EXISTS invoices (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     code VARCHAR(50) NOT NULL,
     month VARCHAR(20) NOT NULL,
+    invoice_year INTEGER NOT NULL, -- Actual invoice year from filename (not upload year)
+    invoice_number VARCHAR(50) NOT NULL, -- Invoice number from filename (e.g., 001, IV001, M0176234)
     file_url TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -127,7 +130,9 @@ CREATE TABLE IF NOT EXISTS user_codes (
 -- Performance indexes
 CREATE INDEX IF NOT EXISTS idx_invoices_code ON invoices(code);
 CREATE INDEX IF NOT EXISTS idx_invoices_code_month ON invoices(code, month);
+CREATE INDEX IF NOT EXISTS idx_invoices_invoice_year ON invoices(invoice_year DESC);
 CREATE INDEX IF NOT EXISTS idx_invoices_created_at ON invoices(created_at DESC);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_invoices_code_month_year_invoice ON invoices(code, month, invoice_year, invoice_number);
 CREATE INDEX IF NOT EXISTS idx_knowledge_base_title ON knowledge_base(title);
 CREATE INDEX IF NOT EXISTS idx_knowledge_base_created_at ON knowledge_base(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_activity_log_admin ON admin_activity_log(admin_user_id);
