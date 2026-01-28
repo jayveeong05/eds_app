@@ -276,7 +276,7 @@ async function saveEdit() {
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
             
-            const uploadResponse = await fetch(API_BASE + '/../lib/upload.php', {
+            const uploadResponse = await fetch(API_BASE + '/upload.php', {
                 method: 'POST',
                 body: formData
             });

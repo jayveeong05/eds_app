@@ -49,7 +49,7 @@ if (isset($_FILES['file']) && isset($_POST['folder'])) {
     $folder = $_POST['folder']; // e.g., 'promotions' or 'invoices'
     
     // Simple validation
-    if (!in_array($folder, ['promotions', 'invoices', 'avatars', 'news'])) {
+    if (!in_array($folder, ['promotions', 'invoices', 'avatars', 'news', 'knowledge_base'])) {
         http_response_code(400);
         echo json_encode(array("message" => "Invalid folder specified."));
         exit;
@@ -74,16 +74,23 @@ if (isset($_FILES['file']) && isset($_POST['folder'])) {
         // Return S3 key instead of full URL (for proxy pattern)
         http_response_code(201);
         echo json_encode(array(
+            "success" => true,
             "message" => "File uploaded successfully.",
             "url" => $s3_key  // Return key like "promotions/abc123.jpg"
         ));
     } else {
         http_response_code(503);
-        echo json_encode(array("message" => "S3 Upload Failed: " . $upload_result));
+        echo json_encode(array(
+            "success" => false,
+            "message" => "S3 Upload Failed: " . $upload_result
+        ));
     }
 
 } else {
     http_response_code(400);
-    echo json_encode(array("message" => "No file or folder provided."));
+    echo json_encode(array(
+        "success" => false,
+        "message" => "No file or folder provided."
+    ));
 }
 ?>

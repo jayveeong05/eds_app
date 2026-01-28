@@ -435,8 +435,9 @@ async function saveEdit() {
         if (fileInput.files.length > 0) {
             const formData = new FormData();
             formData.append('file', fileInput.files[0]);
+            formData.append('folder', 'knowledge_base');
             
-            const uploadResponse = await fetch(API_BASE + '/../lib/upload.php', {
+            const uploadResponse = await fetch(API_BASE + '/upload.php', {
                 method: 'POST',
                 body: formData
             });
@@ -449,7 +450,7 @@ async function saveEdit() {
                 return;
             }
             
-            fileUrl = uploadData.s3_key;
+            fileUrl = uploadData.url;
         }
         
         // Get auth token
