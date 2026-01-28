@@ -36,6 +36,23 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   bool _obscureConfirmPassword = true;
   bool _acceptTerms = false;
 
+  bool get _isSignedInWithSocialProvider {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return false;
+    return user.providerData.any(
+      (p) => p.providerId == 'google.com' || p.providerId == 'apple.com',
+    );
+  }
+
+  bool get _isEmailFlow {
+    // Treat this as "email registration" only when explicitly requested AND
+    // there isn't already a Firebase user signed in via a social provider.
+    // This prevents a common issue where a Google sign-in user is routed to
+    // registration with `signInMethod = email`, which then tries to create a
+    // new email/password account for an email that already exists.
+    return widget.signInMethod == 'email' && !_isSignedInWithSocialProvider;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -74,7 +91,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     setState(() => _isLoading = true);
 
     try {
-      if (widget.signInMethod == 'email') {
+      if (_isEmailFlow) {
         await _registerEmailUser();
       } else {
         await _updateThirdPartyProfile();
@@ -226,7 +243,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isEmailSignIn = widget.signInMethod == 'email';
+    final isEmailSignIn = _isEmailFlow;
     final isReadOnlyEmail = !isEmailSignIn;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;

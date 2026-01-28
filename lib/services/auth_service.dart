@@ -42,7 +42,13 @@ class AuthService {
       );
       final response = await http.post(
         Uri.parse('${Environment.apiUrl}/verify_token.php'),
-        body: jsonEncode({'idToken': idToken, 'signInMethod': loginMethod}),
+        // Backend historically used `loginMethod`, while some clients send
+        // `signInMethod`. Send both for compatibility.
+        body: jsonEncode({
+          'idToken': idToken,
+          'signInMethod': loginMethod,
+          'loginMethod': loginMethod,
+        }),
         headers: {'Content-Type': 'application/json'},
       );
 

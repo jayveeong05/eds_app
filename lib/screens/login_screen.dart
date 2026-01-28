@@ -84,7 +84,10 @@ class _LoginScreenState extends State<LoginScreen> {
             context,
             '/register',
             arguments: {
-              'signInMethod': userData['login_method'] ?? loginType,
+              // Force social method here. Some backends may return a default
+              // `login_method` like "email" even for social sign-ins, which
+              // would incorrectly show the email/password registration form.
+              'signInMethod': loginType,
               'email': userData['email'],
               'name': userData['name'] ?? '',
             },

@@ -50,6 +50,7 @@ $router->add('POST', '/api/verify_token.php', 'ApiController@verifyToken');
 $router->add('POST', '/api/verify_admin.php', 'ApiController@verifyAdmin');
 $router->add('POST', '/api/upload.php', 'ApiController@upload');
 $router->add('POST', '/api/upload_knowledge_base.php', 'ApiController@uploadKnowledgeBase');
+$router->add('POST', '/api/update_knowledge_base.php', 'ApiController@updateKnowledgeBase');
 $router->add('GET', '/api/get_knowledge_base.php', 'ApiController@getKnowledgeBase');
 $router->add('POST', '/api/delete_knowledge_base.php', 'ApiController@deleteKnowledgeBase');
 $router->add('GET', '/api/get_code_invoices.php', 'ApiController@getCodeInvoices');

@@ -43,7 +43,8 @@ if (!empty($data->idToken)) {
         
         $uid = $data->uid ?? ($verification['payload']['sub'] ?? null);
         $email = $data->email ?? ($verification['payload']['email'] ?? null);
-        $loginMethod = $data->loginMethod ?? 'email'; // Get login method, default to email
+        // Support both keys: older clients send `signInMethod`, newer uses `loginMethod`
+        $loginMethod = $data->loginMethod ?? ($data->signInMethod ?? 'email');
 
         if (!$uid || !$email) {
              http_response_code(400);
@@ -63,6 +64,22 @@ if (!empty($data->idToken)) {
         if ($stmt->rowCount() > 0) {
             // User exists, check if deleted
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // If the client is telling us a social login method but the DB says "email",
+            // update it to reflect reality. This prevents the app from showing "EMAIL"
+            // after a Google/Apple sign in.
+            if (!empty($loginMethod) &&
+                in_array($loginMethod, ['google', 'apple'], true) &&
+                (!isset($row['login_method']) || $row['login_method'] !== $loginMethod)) {
+                $update = "UPDATE users SET login_method = :loginMethod WHERE firebase_uid = :uid";
+                $u = $db->prepare($update);
+                $u->bindParam(':loginMethod', $loginMethod);
+                $u->bindParam(':uid', $uid);
+                $u->execute();
+
+                // Keep response consistent with the updated value
+                $row['login_method'] = $loginMethod;
+            }
             
             // Block deleted users from authenticating
             if ($row['status'] === 'deleted') {
