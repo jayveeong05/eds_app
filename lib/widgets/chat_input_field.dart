@@ -16,17 +16,6 @@ class ChatInputField extends StatefulWidget {
 
 class _ChatInputFieldState extends State<ChatInputField> {
   final TextEditingController _controller = TextEditingController();
-  bool _hasText = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller.addListener(() {
-      setState(() {
-        _hasText = _controller.text.trim().isNotEmpty;
-      });
-    });
-  }
 
   @override
   void dispose() {
@@ -62,76 +51,44 @@ class _ChatInputFieldState extends State<ChatInputField> {
         child: Row(
           children: [
             Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: theme.scaffoldBackgroundColor, // Cloud Dancer
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: theme.colorScheme.outline.withOpacity(0.1),
+              child: TextField(
+                controller: _controller,
+                enabled: !widget.isLoading,
+                maxLines: null,
+                textCapitalization: TextCapitalization.sentences,
+                onSubmitted: (_) => _handleSend(),
+                decoration: InputDecoration(
+                  hintText: 'Ask about the knowledge base...',
+                  hintStyle: TextStyle(
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
                   ),
-                ),
-                child: TextField(
-                  controller: _controller,
-                  enabled: !widget.isLoading,
-                  maxLines: null,
-                  textInputAction: TextInputAction.send,
-                  onSubmitted: (_) => _handleSend(),
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: theme.colorScheme.onSurface,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide.none,
                   ),
-                  decoration: InputDecoration(
-                    hintText: 'Ask about the knowledge base...',
-                    hintStyle: theme.textTheme.bodyMedium?.copyWith(
-                      color: theme.colorScheme.onSurface.withOpacity(0.5),
-                    ),
-                    border: InputBorder.none,
-                    enabledBorder: InputBorder.none,
-                    focusedBorder: InputBorder.none,
-                    errorBorder: InputBorder.none,
-                    disabledBorder: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 12,
-                    ),
-                    prefixIcon: Icon(
-                      Icons.chat_bubble_outline,
-                      color: theme.colorScheme.onSurface.withOpacity(0.4),
-                    ),
+                  filled: true,
+                  fillColor: theme.colorScheme.surfaceContainerHighest,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 12,
                   ),
                 ),
               ),
             ),
             const SizedBox(width: 8),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              child: widget.isLoading
-                  ? Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: SizedBox(
-                        width: 24,
-                        height: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            theme.colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                    )
-                  : IconButton(
-                      onPressed: _hasText ? _handleSend : null,
-                      icon: Icon(
-                        Icons.send,
-                        color: _hasText
-                            ? Colors.white
-                            : theme.colorScheme.onSurface.withOpacity(0.3),
-                      ),
-                      style: IconButton.styleFrom(
-                        backgroundColor: _hasText
-                            ? theme.colorScheme.primary
-                            : theme.scaffoldBackgroundColor,
-                      ),
-                    ),
+            Container(
+              decoration: BoxDecoration(
+                color: widget.isLoading
+                    ? theme.colorScheme.surfaceContainerHighest
+                    : theme.colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                onPressed: widget.isLoading ? null : _handleSend,
+                icon: const Icon(Icons.send),
+                color: Colors.white,
+                tooltip: 'Send',
+              ),
             ),
           ],
         ),

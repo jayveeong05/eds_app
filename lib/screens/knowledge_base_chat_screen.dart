@@ -251,6 +251,36 @@ class _KnowledgeBaseChatScreenState extends State<KnowledgeBaseChatScreen> {
             ),
           ),
 
+          // Loading indicator
+          Consumer<KbChatService>(
+            builder: (context, chatService, child) {
+              if (!chatService.isLoading) return const SizedBox.shrink();
+
+              return Container(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Searching knowledge base...',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+
           // Input field
           Consumer<KbChatService>(
             builder: (context, chatService, child) {
