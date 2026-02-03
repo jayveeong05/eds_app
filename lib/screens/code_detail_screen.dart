@@ -138,7 +138,8 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
   // Format invoice number for display
   String _formatInvoiceNumber(Map<String, dynamic> invoice) {
     // Show invoice number if available, otherwise fall back to upload date
-    if (invoice['invoice_number'] != null && invoice['invoice_number'].toString().isNotEmpty) {
+    if (invoice['invoice_number'] != null &&
+        invoice['invoice_number'].toString().isNotEmpty) {
       return 'Invoice #: ${invoice['invoice_number']}';
     }
     // Fallback to upload date if invoice number is not available
@@ -174,12 +175,6 @@ class _CodeDetailScreenState extends State<CodeDetailScreen> {
                       widget.machineCode,
                       style: theme.textTheme.headlineMedium,
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    onPressed: _fetchInvoices,
-                    tooltip: 'Refresh',
-                    color: primaryColor,
                   ),
                 ],
               ),

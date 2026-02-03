@@ -94,179 +94,203 @@ class _PromotionsScreenState extends State<PromotionsScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       body: SafeArea(
-        child: _isLoading
-            ? Center(
-                child: CircularProgressIndicator(
-                  color: theme.colorScheme.primary,
-                ),
-              )
-            : _errorMessage.isNotEmpty
-            ? Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+        child: RefreshIndicator(
+          onRefresh: _fetchPromotions,
+          color: theme.colorScheme.primary,
+          child: _isLoading
+              ? ListView(
+                  // Make scrollable for RefreshIndicator
+                  physics: const AlwaysScrollableScrollPhysics(),
                   children: [
-                    Text(
-                      _errorMessage,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: _fetchPromotions,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: theme.colorScheme.primary,
-                        foregroundColor: Colors.white,
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height - 100,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          color: theme.colorScheme.primary,
+                        ),
                       ),
-                      child: const Text('Retry'),
                     ),
                   ],
-                ),
-              )
-            : _promotions.isEmpty
-            ? const Center(child: Text('No promotions available'))
-            : Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                )
+              : _errorMessage.isNotEmpty
+              ? ListView(
+                  // Make scrollable for RefreshIndicator
+                  physics: const AlwaysScrollableScrollPhysics(),
                   children: [
-                    // Header
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height - 100,
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              _errorMessage,
+                              style: const TextStyle(color: Colors.red),
+                            ),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: _fetchPromotions,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: theme.colorScheme.primary,
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              : _promotions.isEmpty
+              ? ListView(
+                  // Make scrollable for RefreshIndicator
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: const [
+                    SizedBox(
+                      height: 400,
+                      child: Center(child: Text('No promotions available')),
+                    ),
+                  ],
+                )
+              : SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // Header (removed refresh button)
+                        const SizedBox(height: 16),
                         Text(
                           'Promotions',
                           style: theme.textTheme.headlineMedium,
                         ),
-                        // Refresh button
-                        IconButton(
-                          icon: const Icon(Icons.refresh),
-                          onPressed: _fetchPromotions,
-                          tooltip: 'Refresh',
-                          color: theme.colorScheme.primary,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                    // Card with PageView
-                    Expanded(
-                      child: Center(
-                        child: SizedBox(
+                        // Card with PageView
+                        SizedBox(
                           height: 600,
-                          child: PageView.builder(
-                            controller: _pageController,
-                            onPageChanged: (virtualIndex) {
-                              setState(() {
-                                _currentPage = virtualIndex % _realPageCount;
-                              });
-                            },
-                            itemCount: _virtualPageCount,
-                            itemBuilder: (context, virtualIndex) {
-                              final realIndex = virtualIndex % _realPageCount;
-                              final promo = _promotions[realIndex];
-                              return _buildPromotionCard(promo);
-                            },
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Navigation Controls (Bottom Row)
-                    const SizedBox(height: 32),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        // Left Arrow
-                        Container(
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.surface,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.04),
-                                blurRadius: 24,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.arrow_back_ios_new,
-                              color: theme.colorScheme.onSurface.withOpacity(
-                                0.4,
-                              ),
-                              size: 20,
+                          child: Center(
+                            child: PageView.builder(
+                              controller: _pageController,
+                              onPageChanged: (virtualIndex) {
+                                setState(() {
+                                  _currentPage = virtualIndex % _realPageCount;
+                                });
+                              },
+                              itemCount: _virtualPageCount,
+                              itemBuilder: (context, virtualIndex) {
+                                final realIndex = virtualIndex % _realPageCount;
+                                final promo = _promotions[realIndex];
+                                return _buildPromotionCard(promo);
+                              },
                             ),
-                            onPressed: () {
-                              _pageController.previousPage(
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              );
-                            },
-                            tooltip: 'Previous',
                           ),
                         ),
-                        const SizedBox(width: 24),
 
-                        // Dot Indicators
+                        // Navigation Controls (Bottom Row)
+                        const SizedBox(height: 32),
                         Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: List.generate(_promotions.length, (index) {
-                            final isActive = index == _currentPage;
-                            return AnimatedContainer(
-                              duration: const Duration(milliseconds: 300),
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              width: isActive ? 32 : 8,
-                              height: 8,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            // Left Arrow
+                            Container(
                               decoration: BoxDecoration(
-                                color: isActive
-                                    ? theme
-                                          .colorScheme
-                                          .primary // EDS Blue
-                                    : Colors.grey[300],
-                                borderRadius: BorderRadius.circular(4),
+                                color: theme.colorScheme.surface,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.04),
+                                    blurRadius: 24,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
                               ),
-                            );
-                          }),
-                        ),
-
-                        const SizedBox(width: 24),
-                        // Right Arrow
-                        Container(
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary, // EDS Blue
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [
-                              BoxShadow(
-                                color: theme.colorScheme.primary.withOpacity(
-                                  0.3,
+                              child: IconButton(
+                                icon: Icon(
+                                  Icons.arrow_back_ios_new,
+                                  color: theme.colorScheme.onSurface
+                                      .withOpacity(0.4),
+                                  size: 20,
                                 ),
-                                blurRadius: 16,
-                                offset: const Offset(0, 6),
+                                onPressed: () {
+                                  _pageController.previousPage(
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                                tooltip: 'Previous',
                               ),
-                            ],
-                          ),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.white,
-                              size: 20,
                             ),
-                            onPressed: () {
-                              _pageController.nextPage(
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              );
-                            },
-                            tooltip: 'Next',
-                          ),
+                            const SizedBox(width: 24),
+
+                            // Dot Indicators
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: List.generate(_promotions.length, (
+                                index,
+                              ) {
+                                final isActive = index == _currentPage;
+                                return AnimatedContainer(
+                                  duration: const Duration(milliseconds: 300),
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 4,
+                                  ),
+                                  width: isActive ? 32 : 8,
+                                  height: 8,
+                                  decoration: BoxDecoration(
+                                    color: isActive
+                                        ? theme
+                                              .colorScheme
+                                              .primary // EDS Blue
+                                        : Colors.grey[300],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                );
+                              }),
+                            ),
+
+                            const SizedBox(width: 24),
+                            // Right Arrow
+                            Container(
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primary, // EDS Blue
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: theme.colorScheme.primary
+                                        .withOpacity(0.3),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.arrow_forward_ios,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                onPressed: () {
+                                  _pageController.nextPage(
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                                tooltip: 'Next',
+                              ),
+                            ),
+                          ],
                         ),
+                        const SizedBox(
+                          height: 100,
+                        ), // Add padding for floating nav
                       ],
                     ),
-                    const SizedBox(height: 100), // Add padding for floating nav
-                  ],
+                  ),
                 ),
-              ),
+        ),
       ),
     );
   }

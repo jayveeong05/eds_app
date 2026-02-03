@@ -103,18 +103,7 @@ class _InvoicesScreenState extends State<InvoicesScreen> {
             // Custom Header
             Padding(
               padding: const EdgeInsets.all(24),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Invoices', style: theme.textTheme.headlineMedium),
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    onPressed: _fetchMachineCodes,
-                    tooltip: 'Refresh',
-                    color: primaryColor,
-                  ),
-                ],
-              ),
+              child: Text('Invoices', style: theme.textTheme.headlineMedium),
             ),
 
             // Body
